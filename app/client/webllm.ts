@@ -100,9 +100,14 @@ export class WebLLMApi implements LLMApi {
       try {
         await this.initModel(options.onUpdate);
       } catch (err: any) {
-        let errorMessage = err.message || err.toString() || "";
-        if (errorMessage === "[object Object]") {
-          errorMessage = JSON.stringify(err);
+        let errorMessage: string;
+        if (typeof err === "string") {
+          errorMessage = err === "[object Object]" ? "Unknown error" : err;
+        } else {
+          errorMessage = err?.message || err?.toString?.() || "";
+          if (errorMessage === "[object Object]") {
+            errorMessage = JSON.stringify(err) || "Unknown error";
+          }
         }
         console.error("Error while initializing the model", errorMessage);
         options?.onError?.(errorMessage);
@@ -123,10 +128,15 @@ export class WebLLMApi implements LLMApi {
       stopReason = completion.stopReason;
       usage = completion.usage;
     } catch (err: any) {
-      let errorMessage = err.message || err.toString() || "";
-      if (errorMessage === "[object Object]") {
-        log.error(JSON.stringify(err));
-        errorMessage = JSON.stringify(err);
+      let errorMessage: string;
+      if (typeof err === "string") {
+        errorMessage = err === "[object Object]" ? "Unknown error" : err;
+      } else {
+        errorMessage = err?.message || err?.toString?.() || "";
+        if (errorMessage === "[object Object]") {
+          log.error(JSON.stringify(err));
+          errorMessage = JSON.stringify(err) || "Unknown error";
+        }
       }
       console.error("Error in chatCompletion", errorMessage);
       if (

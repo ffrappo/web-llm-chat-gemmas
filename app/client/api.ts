@@ -46,7 +46,7 @@ export interface ChatOptions {
     stopReason?: ChatCompletionFinishReason,
     usage?: CompletionUsage,
   ) => void;
-  onError?: (err: Error) => void;
+  onError?: (err: string | Error) => void;
 }
 
 export interface LLMUsage {

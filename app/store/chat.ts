@@ -379,8 +379,17 @@ export const useChatStore = createPersistStore(
             });
           },
           onError(error) {
-            const errorMessage =
-              error.message || error.toString?.() || undefined;
+            let errorMessage: string;
+            if (typeof error === "string") {
+              errorMessage =
+                error === "[object Object]" ? "Unknown error" : error;
+            } else {
+              errorMessage =
+                error?.message || error?.toString?.() || "Unknown error";
+              if (errorMessage === "[object Object]") {
+                errorMessage = JSON.stringify(error) || "Unknown error";
+              }
+            }
             const isAborted = errorMessage?.includes("aborted");
             botMessage.content += "\n\n" + errorMessage;
             botMessage.streaming = false;
