@@ -1,51 +1,68 @@
 .icon-button {
-  background-color: var(--white);
-  border-radius: 10px;
+  background-color: var(--surface-solid);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px;
-
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   user-select: none;
   outline: none;
-  border: none;
+  border: var(--border-in-light);
   color: var(--black);
+  font-weight: 500;
+  font-size: 13px;
+  gap: 6px;
 
   &[disabled] {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.4;
   }
 
   &.primary {
-    background-color: var(--primary);
+    background: var(--gradient-primary);
     color: white;
+    border-color: transparent;
+    box-shadow: var(--glow-primary);
 
     path {
       fill: white !important;
     }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.35);
+    }
   }
 
   &.danger {
-    color: rgba($color: red, $alpha: 0.8);
-    border-color: rgba($color: red, $alpha: 0.5);
-    background-color: rgba($color: red, $alpha: 0.05);
+    color: rgba($color: #ef4444, $alpha: 0.9);
+    border-color: rgba($color: #ef4444, $alpha: 0.2);
+    background-color: rgba($color: #ef4444, $alpha: 0.06);
 
     &:hover {
-      border-color: red;
-      background-color: rgba($color: red, $alpha: 0.1);
+      border-color: rgba($color: #ef4444, $alpha: 0.4);
+      background-color: rgba($color: #ef4444, $alpha: 0.1);
+      transform: translateY(-1px);
     }
 
     path {
-      fill: red !important;
+      fill: #ef4444 !important;
     }
   }
 
   &:hover,
   &:focus {
     border-color: var(--primary);
+    background-color: var(--surface-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -67,17 +84,18 @@
 
 @media only screen and (max-width: 600px) {
   .icon-button {
-    padding: 16px;
+    padding: 14px;
   }
 }
 
 .icon-button-text {
-  font-size: 12px;
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 
   &:not(:first-child) {
-    margin-left: 5px;
+    margin-left: 0;
   }
 }

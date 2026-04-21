@@ -1,11 +1,13 @@
 .window-header {
-  padding: 14px 20px;
-  border-bottom: rgba(0, 0, 0, 0.1) 1px solid;
+  padding: 16px 24px;
+  border-bottom: var(--border-in-light);
   position: relative;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .window-header-title {
@@ -13,24 +15,29 @@
   overflow: hidden;
 
   .window-header-main-title {
-    font-size: 20px;
-    font-weight: bolder;
+    font-size: 18px;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     display: block;
     max-width: 50vw;
+    letter-spacing: -0.01em;
+    color: var(--black);
   }
 
   .window-header-sub-title {
-    font-size: 14px;
+    font-size: 13px;
+    color: var(--light-gray);
+    margin-top: 2px;
   }
 }
 
 .window-actions {
   display: inline-flex;
+  gap: 8px;
 }
 
 .window-action-button:not(:first-child) {
-  margin-left: 10px;
+  margin-left: 0;
 }

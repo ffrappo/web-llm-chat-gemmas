@@ -6,40 +6,40 @@
   flex-direction: column;
 
   .template-page-body {
-    padding: 20px;
+    padding: 24px;
     overflow-y: auto;
 
     .template-filter {
       width: 100%;
       max-width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       animation: slide-in ease 0.3s;
-      height: 40px;
-
+      height: 44px;
       display: flex;
+      gap: 10px;
 
       .search-bar {
         flex-grow: 1;
         max-width: 100%;
         min-width: 0;
+        border-radius: 14px;
       }
 
       .template-filter-lang {
         height: 100%;
-        margin-left: 10px;
       }
 
       .template-create {
         height: 100%;
-        margin-left: 10px;
         box-sizing: border-box;
         min-width: 80px;
+        border-radius: 14px;
       }
     }
 
     @media screen and (max-width: 700px) {
       .template-filter {
-        margin-left: -10px;
+        margin-left: 0;
 
         .search-bar {
           display: none;
@@ -57,19 +57,25 @@
       padding: 20px;
       border: var(--border-in-light);
       animation: slide-in ease 0.3s;
+      background: var(--surface-solid);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--surface-hover);
+      }
 
       &:not(:last-child) {
         border-bottom: 0;
       }
 
       &:first-child {
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
       }
 
       &:last-child {
-        border-bottom-left-radius: 10px;
-        border-bottom-right-radius: 10px;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
       }
 
       .template-header {
@@ -80,17 +86,25 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-right: 10px;
+          margin-right: 14px;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: var(--gradient-subtle);
+          border: var(--border-in-light);
         }
 
         .template-title {
           .template-name {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
           }
 
           .template-info {
             font-size: 12px;
+            color: var(--light-gray);
+            margin-top: 2px;
           }
         }
       }
@@ -99,14 +113,15 @@
         display: flex;
         flex-wrap: nowrap;
         transition: all ease 0.3s;
+        gap: 4px;
       }
 
       @media screen and (max-width: 600px) {
         display: flex;
         flex-direction: column;
-        padding-bottom: 10px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-radius: 16px;
+        margin-bottom: 16px;
         box-shadow: var(--card-shadow);
 
         &:not(:last-child) {
@@ -116,7 +131,7 @@
         .template-actions {
           width: 100%;
           justify-content: space-between;
-          padding-top: 10px;
+          padding-top: 14px;
         }
       }
     }
