@@ -102,7 +102,10 @@ export class WebLLMApi implements LLMApi {
       } catch (err: any) {
         let errorMessage: string;
         if (typeof err === "string") {
-          errorMessage = err === "[object Object]" ? "Unknown error" : err;
+          errorMessage =
+            err === "[object Object]" || err === "Unknown error"
+              ? "Model initialization failed. Check the browser console for details."
+              : err;
         } else {
           errorMessage = err?.message || err?.toString?.() || "";
           if (errorMessage === "[object Object]") {
@@ -130,7 +133,10 @@ export class WebLLMApi implements LLMApi {
     } catch (err: any) {
       let errorMessage: string;
       if (typeof err === "string") {
-        errorMessage = err === "[object Object]" ? "Unknown error" : err;
+        errorMessage =
+          err === "[object Object]" || err === "Unknown error"
+            ? "Chat completion failed. Check the browser console for details."
+            : err;
       } else {
         errorMessage = err?.message || err?.toString?.() || "";
         if (errorMessage === "[object Object]") {

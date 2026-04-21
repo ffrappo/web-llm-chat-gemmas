@@ -382,7 +382,9 @@ export const useChatStore = createPersistStore(
             let errorMessage: string;
             if (typeof error === "string") {
               errorMessage =
-                error === "[object Object]" ? "Unknown error" : error;
+                error === "[object Object]" || error === "Unknown error"
+                  ? "Request failed. Check the browser console for details."
+                  : error;
             } else {
               errorMessage =
                 error?.message || error?.toString?.() || "Unknown error";

@@ -5,7 +5,32 @@ import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
 
 declare const self: ServiceWorkerGlobalScope;
 const FORNACE_WEBLLM_CHAT_CACHE = "fornace-webllm-chat-cache";
-let handler: ServiceWorkerMLCEngineHandler;
+
+class BetterServiceWorkerMLCEngineHandler extends ServiceWorkerMLCEngineHandler {
+  async handleTask<T>(uuid: string, task: () => Promise<T>): Promise<void> {
+    try {
+      const res = await task();
+      const msg = { kind: "return" as const, uuid, content: res as any };
+      this.postMessage(msg);
+    } catch (err: any) {
+      console.error("[ServiceWorker] Task failed:", err);
+      let errStr: string;
+      if (typeof err === "string") {
+        errStr = err;
+      } else if (err?.message) {
+        errStr = err.message;
+      } else if (err?.toString) {
+        errStr = err.toString();
+      } else {
+        errStr = JSON.stringify(err) || "Unknown service worker error";
+      }
+      const msg = { kind: "throw" as const, uuid, content: errStr as any };
+      this.postMessage(msg);
+    }
+  }
+}
+
+let handler: BetterServiceWorkerMLCEngineHandler;
 
 async function checkGPUAvailablity() {
   if (!("gpu" in navigator)) {
@@ -22,7 +47,7 @@ async function checkGPUAvailablity() {
 
 self.addEventListener("message", (event) => {
   if (!handler) {
-    handler = new ServiceWorkerMLCEngineHandler();
+    handler = new BetterServiceWorkerMLCEngineHandler();
     console.log("Service Worker: Web-LLM Engine Activated");
   }
 
@@ -57,7 +82,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   if (!handler) {
-    handler = new ServiceWorkerMLCEngineHandler();
+    handler = new BetterServiceWorkerMLCEngineHandler();
     console.log("Service Worker: Web-LLM Engine Activated");
   }
 });
