@@ -4,8 +4,6 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/gear.svg";
-import GithubIcon from "../icons/github.svg";
-import InternetIcon from "../icons/internet.svg";
 import MlcIcon from "../icons/mlc.svg";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
@@ -25,8 +23,6 @@ import {
   MIN_SIDEBAR_WIDTH,
   NARROW_SIDEBAR_WIDTH,
   Path,
-  REPO_URL,
-  WEBLLM_HOME_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -219,16 +215,6 @@ export function SideBar(props: { className?: string }) {
             />
           </div>
           <div className={styles["sidebar-action"]}>
-            <a href={WEBLLM_HOME_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<InternetIcon />} shadow />
-            </a>
-          </div>
-          <div className={styles["sidebar-action"]}>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<GithubIcon />} shadow />
-            </a>
-          </div>
-          <div className={styles["sidebar-action"]}>
             <IconButton
               icon={
                 <>
@@ -258,6 +244,35 @@ export function SideBar(props: { className?: string }) {
           />
         </div>
       </div>
+      {!shouldNarrow && (
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 12,
+            opacity: 0.5,
+            padding: "8px 0",
+          }}
+        >
+          A fork of{" "}
+          <a
+            href="https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline" }}
+          >
+            NextChat
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://fornacestudio.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline" }}
+          >
+            Fornace Studio
+          </a>
+        </div>
+      )}
 
       <div
         className={styles["sidebar-drag"]}

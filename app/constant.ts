@@ -1,9 +1,9 @@
 import { prebuiltAppConfig } from "@mlc-ai/web-llm";
 import { ModelRecord } from "./client/api";
 
-export const OWNER = "mlc-ai";
-export const REPO = "web-llm-chat";
-export const WEBLLM_HOME_URL = "https://webllm.mlc.ai";
+export const OWNER = "fornacestudio";
+export const REPO = "fornace-webllm-chat";
+export const WEBLLM_HOME_URL = "https://fornacestudio.com";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
 
@@ -48,7 +48,7 @@ export const ACCESS_CODE_PREFIX = "nk-";
 export const LAST_INPUT_KEY = "last-input";
 export const UNFINISHED_INPUT = (name: string) => "unfinished-input-" + name;
 
-export const STORAGE_KEY = "chatgpt-next-web";
+export const STORAGE_KEY = "fornace-webllm-chat";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 
@@ -58,7 +58,7 @@ export const DEFAULT_INPUT_TEMPLATE = `{{input}}`; // input / time / model / lan
 
 export const DEFAULT_SYSTEM_TEMPLATE = `
 You are an AI large language model assistant trained by {{provider}}.
-You are currently engaging with users on WebLLM Chat, an open-source AI Chatbot UI developed by MLC.ai (Machine Learning Compilation).
+You are currently engaging with users on Fornace WebLLM Chat, an open-source AI Chatbot UI developed by Fornace Studio.
 Model display_name:  {{model}}
 The current date and time is {{time}}.
 Latex inline format: \\(x^2\\) 

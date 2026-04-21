@@ -6,10 +6,10 @@ import { getClientConfig } from "./config/client";
 import { type Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.webllm.ai"),
-  title: "WebLLM Chat",
+  metadataBase: new URL("https://fornacestudio.com"),
+  title: "Fornace WebLLM Chat",
   description:
-    "Chat with AI large language models running natively in your browser. Enjoy private, server-free, seamless AI conversations.",
+    "Chat with AI large language models running natively in your browser. Your data never leaves your computer — enjoy private, server-free, seamless AI conversations.",
   keywords: [
     "WebLLM",
     "AI chat",
@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     "language model",
     "no server",
   ],
-  authors: [{ name: "WebLLM Team" }],
-  publisher: "WebLLM",
-  creator: "WebLLM",
+  authors: [{ name: "Fornace Studio" }],
+  publisher: "Fornace Studio",
+  creator: "Fornace Studio",
   robots: "index, follow",
   viewport: {
     width: "device-width",
@@ -32,34 +32,34 @@ export const metadata: Metadata = {
     { media: "(prefers-color-scheme: dark)", color: "#151515" },
   ],
   appleWebApp: {
-    title: "WebLLM Chat",
+    title: "Fornace WebLLM Chat",
     statusBarStyle: "default",
   },
   openGraph: {
     type: "website",
-    url: "https://chat.webllm.ai",
-    title: "WebLLM Chat",
+    url: "https://fornacestudio.com",
+    title: "Fornace WebLLM Chat",
     description:
       "Chat with AI large language models running natively in your browser",
-    siteName: "WebLLM Chat",
+    siteName: "Fornace WebLLM Chat",
     images: [
       {
-        url: "https://chat.webllm.ai/mlc-logo.png",
+        url: "https://fornacestudio.com/mlc-logo.png",
         width: 360,
         height: 360,
-        alt: "WebLLM Chat - Browser-based AI conversation",
+        alt: "Fornace WebLLM Chat - Browser-based AI conversation",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "WebLLM Chat",
+    title: "Fornace WebLLM Chat",
     description:
       "Chat with AI large language models running natively in your browser",
-    images: ["https://chat.webllm.ai/mlc-logo.png"],
+    images: ["https://fornacestudio.com/mlc-logo.png"],
   },
   alternates: {
-    canonical: "https://chat.webllm.ai",
+    canonical: "https://fornacestudio.com",
   },
 };
 
@@ -123,10 +123,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "WebLLM Chat",
-              url: "https://chat.webllm.ai",
+              name: "Fornace WebLLM Chat",
+              url: "https://fornacestudio.com",
               description:
-                "Chat with AI large language models running natively in your browser. Enjoy private, server-free, seamless AI conversations.",
+                "Chat with AI large language models running natively in your browser. Your data never leaves your computer — enjoy private, server-free, seamless AI conversations.",
               applicationCategory: "Artificial Intelligence",
               offers: {
                 "@type": "Offer",
@@ -136,7 +136,7 @@ export default function RootLayout({
               operatingSystem: "Web Browser",
               creator: {
                 "@type": "Organization",
-                name: "WebLLM",
+                name: "Fornace Studio",
               },
             }),
           }}

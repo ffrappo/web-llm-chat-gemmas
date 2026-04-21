@@ -66,6 +66,11 @@ export const BOT_HELLO: ChatMessage = createMessage({
   content: Locale.Store.BotHello,
 });
 
+export const BOT_HELLO_FIRST_TIME: ChatMessage = createMessage({
+  role: "assistant",
+  content: Locale.Store.BotHelloFirstTime,
+});
+
 function createEmptySession(): ChatSession {
   return {
     id: nanoid(),

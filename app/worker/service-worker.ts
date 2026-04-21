@@ -4,7 +4,7 @@ import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
 
 declare const self: ServiceWorkerGlobalScope;
-const CHATGPT_NEXT_WEB_CACHE = "chatgpt-next-web-cache";
+const FORNACE_WEBLLM_CHAT_CACHE = "fornace-webllm-chat-cache";
 let handler: ServiceWorkerMLCEngineHandler;
 
 async function checkGPUAvailablity() {
@@ -49,7 +49,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 
   event.waitUntil(
-    caches.open(CHATGPT_NEXT_WEB_CACHE).then((cache) => {
+    caches.open(FORNACE_WEBLLM_CHAT_CACHE).then((cache) => {
       return cache.addAll([]);
     }),
   );

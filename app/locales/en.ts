@@ -3,8 +3,8 @@ import { SubmitKey } from "../store/config";
 // if you are adding a new translation, please use PartialLocaleType instead of LocaleType
 
 const en = {
-  Title: "WebLLM Chat",
-  Subtitle: "AI Models Running in Browser",
+  Title: "Fornace WebLLM Chat",
+  Subtitle: "AI runs in your browser — your data never leaves your computer",
   WIP: "Coming Soon...",
   ChatItem: {
     ChatItemCount: (count: number) => `${count} messages`,
@@ -78,7 +78,7 @@ const en = {
     Copy: "Copy All",
     Download: "Download",
     MessageFromYou: "Message From You",
-    MessageFromWebLLM: "Message From WebLLM",
+    MessageFromWebLLM: "Message From Fornace",
     Share: "Share",
     Format: {
       Title: "Export Format",
@@ -272,7 +272,10 @@ const en = {
   },
   Store: {
     DefaultTopic: "New Conversation",
-    BotHello: "Hello! How can I assist you today?",
+    BotHello:
+      "Hello! I'm an AI assistant that runs entirely in your web browser. Your messages and data never leave your computer — everything stays private on your device. How can I help you today?",
+    BotHelloFirstTime:
+      "Welcome! I'm an AI assistant that runs entirely in your web browser. Your messages and data never leave your computer — everything stays private on your device. On your first chat, the AI model will download to your browser. After that, it works offline. How can I help you today?",
     Error: "Something went wrong, please try again later.",
     Prompt: {
       History: (content: string) =>
@@ -384,7 +387,7 @@ const en = {
 
   ServiceWorker: {
     Error:
-      "The WebLLM worker has lost connection. Please close all tabs of WebLLM Chat and try opening WebLLM Chat again.",
+      "The WebLLM worker has lost connection. Please close all tabs of Fornace WebLLM Chat and try opening Fornace WebLLM Chat again.",
   },
   MlcLLMConnect: {
     Title: "Connect to MLC-LLM API Endpoint",

@@ -38,6 +38,7 @@ import {
   SubmitKey,
   useChatStore,
   BOT_HELLO,
+  BOT_HELLO_FIRST_TIME,
   createMessage,
   useAppConfig,
   DEFAULT_TOPIC,
@@ -579,7 +580,7 @@ export function DeleteImageButton(props: { deleteImage: () => void }) {
   );
 }
 
-function _Chat() {
+function ChatInner() {
   type RenderMessage = ChatMessage & { preview?: boolean };
 
   const chatStore = useChatStore();
@@ -856,11 +857,15 @@ function _Chat() {
     return session.template.hideContext ? [] : session.template.context.slice();
   }, [session.template.context, session.template.hideContext]);
 
+  const isFirstTimeUser = chatStore.sessions.every(
+    (s) => s.messages.length === 0,
+  );
+  const helloMessage = isFirstTimeUser ? BOT_HELLO_FIRST_TIME : BOT_HELLO;
   if (
     context.length === 0 &&
-    session.messages.at(0)?.content !== BOT_HELLO.content
+    session.messages.at(0)?.content !== helloMessage.content
   ) {
-    const copiedHello = Object.assign({}, BOT_HELLO);
+    const copiedHello = Object.assign({}, helloMessage);
     context.push(copiedHello);
   }
 
@@ -1476,5 +1481,5 @@ function _Chat() {
 export function Chat() {
   const chatStore = useChatStore();
   const sessionIndex = chatStore.currentSessionIndex;
-  return <_Chat key={sessionIndex}></_Chat>;
+  return <ChatInner key={sessionIndex}></ChatInner>;
 }

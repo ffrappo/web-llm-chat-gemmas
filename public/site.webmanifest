@@ -1,6 +1,6 @@
 {
-  "name": "WebLLM Chat",
-  "short_name": "WebLLMChat",
+  "name": "Fornace WebLLM Chat",
+  "short_name": "FornaceChat",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
