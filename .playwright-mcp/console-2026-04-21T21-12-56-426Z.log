@@ -1,0 +1,41 @@
+[    9045ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:3000/:0
+[    9351ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:36887
+[   11017ms] [INFO] Service Worker API is available and in use. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:300
+[   11030ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[   12644ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Successfully registered service worker. http://localhost:3000/sw.js @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   12644ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Service worker is installing... @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   12722ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Registered service worker installed. @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   12722ms] [INFO] Service Worker is activated. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:302
+[   12722ms] [INFO] Service Worker is activated. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:302
+[   12729ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Registered service worker now controlling this page. @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   12730ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Registered service worker activated. @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   12934ms] [INFO] Service Worker has WebGPU Available. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:317
+[   12934ms] [INFO] Create ServiceWorkerMLCEngine @ webpack-internal:///(app-pages-browser)/./app/client/webllm.ts:199
+[   12934ms] [INFO] Service Worker has WebGPU Available. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:317
+[   12934ms] [INFO] Create ServiceWorkerMLCEngine @ webpack-internal:///(app-pages-browser)/./app/client/webllm.ts:199
+[   12945ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
+[   12946ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
+[  211541ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:150
+[  212082ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:88
+[  212950ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:3000/:0
+[  213214ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:36887
+[  213838ms] [INFO] Service Worker API is available and in use. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:300
+[  213839ms] [INFO] Service Worker API is available and in use. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:300
+[  213853ms] [INFO] Service Worker is activated. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:302
+[  213853ms] [INFO] Service Worker is activated. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:302
+[  213854ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[  213855ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Successfully registered service worker. http://localhost:3000/sw.js @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[  214056ms] [INFO] Service Worker has WebGPU Available. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:317
+[  214056ms] [INFO] Create ServiceWorkerMLCEngine @ webpack-internal:///(app-pages-browser)/./app/client/webllm.ts:199
+[  214056ms] [INFO] Service Worker has WebGPU Available. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:317
+[  214056ms] [INFO] Create ServiceWorkerMLCEngine @ webpack-internal:///(app-pages-browser)/./app/client/webllm.ts:199
+[  214068ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
+[  214068ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
+[  243651ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:150

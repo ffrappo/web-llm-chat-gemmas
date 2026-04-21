@@ -1,0 +1,11 @@
+[    9042ms] [ERROR] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element. @ http://localhost:3000/:0
+[    9399ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:36887
+[   10852ms] [INFO] Service Worker API is available and in use. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:327
+[   10854ms] [INFO] Service Worker API is available and in use. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:327
+[   10873ms] [INFO] Service Worker is activated. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:332
+[   10873ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[   10877ms] [LOG] %cserwist background: #2ecc71;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em Successfully registered service worker. http://localhost:3000/sw.js @ webpack-internal:///(app-pages-browser)/./node_modules/serwist/dist/chunks/waitUntil.js:357
+[   11075ms] [INFO] Service Worker has WebGPU Available. @ webpack-internal:///(app-pages-browser)/./app/components/home.tsx:347
+[   11076ms] [INFO] Create ServiceWorkerMLCEngine @ webpack-internal:///(app-pages-browser)/./app/client/webllm.ts:199
+[   11087ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
+[   11087ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ webpack-internal:///(app-pages-browser)/./node_modules/react-router/dist/index.js:996
