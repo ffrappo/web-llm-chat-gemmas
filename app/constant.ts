@@ -106,6 +106,7 @@ const GEMMA4_WEBLLM_MODEL_LIST = [
     required_features: ["shader-f16"],
     overrides: {
       context_window_size: 4096,
+      sliding_window_size: -1,
     },
   },
 ] as typeof prebuiltAppConfig.model_list;
