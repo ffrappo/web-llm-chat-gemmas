@@ -1,18 +1,21 @@
 .message-selector {
   .message-filter {
     display: flex;
+    gap: 10px;
 
     .search-bar {
       max-width: unset;
       flex-grow: 1;
-      margin-right: 10px;
+      margin-right: 0;
+      border-radius: 14px;
     }
 
     .actions {
       display: flex;
+      gap: 8px;
 
       button:not(:last-child) {
-        margin-right: 10px;
+        margin-right: 0;
       }
     }
 
@@ -24,7 +27,7 @@
       }
 
       .actions {
-        margin-top: 20px;
+        margin-top: 16px;
 
         button {
           flex-grow: 1;
@@ -35,15 +38,21 @@
 
   .messages {
     margin-top: 20px;
-    border-radius: 10px;
+    border-radius: 16px;
     border: var(--border-in-light);
     overflow: hidden;
+    background: var(--surface-solid);
 
     .message {
       display: flex;
       align-items: center;
-      padding: 8px 10px;
+      padding: 10px 14px;
       cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--hover-color);
+      }
 
       &-selected {
         background-color: var(--second);
@@ -54,7 +63,7 @@
       }
 
       .avatar {
-        margin-right: 10px;
+        margin-right: 12px;
       }
 
       .body {
@@ -62,13 +71,15 @@
         max-width: calc(100% - 80px);
 
         .date {
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.2;
           opacity: 0.5;
+          font-weight: 500;
         }
 
         .content {
-          font-size: 12px;
+          font-size: 13px;
+          line-height: 1.4;
         }
       }
 
