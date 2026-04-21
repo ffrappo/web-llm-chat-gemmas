@@ -2,6 +2,7 @@ import { ServiceWorkerMLCEngineHandler } from "@mlc-ai/web-llm";
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
+import { serializeError } from "../utils/error";
 
 declare const self: ServiceWorkerGlobalScope;
 const FORNACE_WEBLLM_CHAT_CACHE = "fornace-webllm-chat-cache";
@@ -14,16 +15,7 @@ class BetterServiceWorkerMLCEngineHandler extends ServiceWorkerMLCEngineHandler 
       this.postMessage(msg);
     } catch (err: any) {
       console.error("[ServiceWorker] Task failed:", err);
-      let errStr: string;
-      if (typeof err === "string") {
-        errStr = err;
-      } else if (err?.message) {
-        errStr = err.message;
-      } else if (err?.toString) {
-        errStr = err.toString();
-      } else {
-        errStr = JSON.stringify(err) || "Unknown service worker error";
-      }
+      const errStr = serializeError(err, "Unknown service worker error");
       const msg = { kind: "throw" as const, uuid, content: errStr as any };
       this.postMessage(msg);
     }

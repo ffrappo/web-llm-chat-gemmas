@@ -94,12 +94,12 @@ const qwen3_common_configs = {
 
 const GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
 const GEMMA4_MODEL_REPO =
-  "https://huggingface.co/cnhktyom/gemma-4-E2B-it-q4f16_1-MLC";
+  "https://huggingface.co/welcoma/gemma-4-E2B-it-q4f16_1-MLC";
 
 const GEMMA4_WEBLLM_MODEL_LIST = [
   {
-    // Official WebLLM builds do not yet ship Gemma 4, so this app uses a
-    // custom MLC/WebLLM-compatible artifact until upstream support lands.
+    // Official WebLLM builds do not yet ship Gemma 4, so this app uses the
+    // maintained upstream custom MLC/WebLLM-compatible artifact.
     model: GEMMA4_MODEL_REPO,
     model_id: GEMMA4_MODEL_ID,
     model_lib: `${GEMMA4_MODEL_REPO}/resolve/main/libs/${GEMMA4_MODEL_ID}-webgpu.wasm`,
@@ -110,9 +110,16 @@ const GEMMA4_WEBLLM_MODEL_LIST = [
   },
 ] as typeof prebuiltAppConfig.model_list;
 
+const WEBLLM_MODEL_LIST = [
+  ...prebuiltAppConfig.model_list.filter(
+    (model) => model.model_id !== GEMMA4_MODEL_ID,
+  ),
+  ...GEMMA4_WEBLLM_MODEL_LIST,
+];
+
 export const WEBLLM_APP_CONFIG: typeof prebuiltAppConfig = {
   ...prebuiltAppConfig,
-  model_list: GEMMA4_WEBLLM_MODEL_LIST,
+  model_list: WEBLLM_MODEL_LIST,
 };
 
 const DEFAULT_MODEL_BASES: ModelRecord[] = [

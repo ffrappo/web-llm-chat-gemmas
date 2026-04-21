@@ -17,6 +17,7 @@ import { ChatOptions, LLMApi, LLMConfig, RequestMessage } from "./api";
 import { LogLevel } from "@mlc-ai/web-llm";
 import { fixMessage } from "../utils";
 import { DEFAULT_MODELS, WEBLLM_APP_CONFIG } from "../constant";
+import { formatErrorMessage } from "../utils/error";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
 
@@ -37,15 +38,19 @@ export class WebLLMApi implements LLMApi {
   private initialized = false;
   webllm: WebLLMHandler;
 
+  private getAppConfig(cache = this.llmConfig?.cache) {
+    return {
+      ...WEBLLM_APP_CONFIG,
+      useIndexedDBCache: cache === "index_db",
+    };
+  }
+
   constructor(
     type: "serviceWorker" | "webWorker",
     logLevel: LogLevel = "WARN",
   ) {
     const engineConfig = {
-      appConfig: {
-        ...WEBLLM_APP_CONFIG,
-        useIndexedDBCache: this.llmConfig?.cache === "index_db",
-      },
+      appConfig: this.getAppConfig(),
       logLevel,
     };
 
@@ -73,6 +78,7 @@ export class WebLLMApi implements LLMApi {
     if (!this.llmConfig) {
       throw Error("llmConfig is undefined");
     }
+    this.webllm.engine.setAppConfig(this.getAppConfig(this.llmConfig.cache));
     this.webllm.engine.setInitProgressCallback((report: InitProgressReport) => {
       onUpdate?.(report.text, report.text);
     });
@@ -100,19 +106,11 @@ export class WebLLMApi implements LLMApi {
       try {
         await this.initModel(options.onUpdate);
       } catch (err: any) {
-        let errorMessage: string;
-        if (typeof err === "string") {
-          errorMessage =
-            err === "[object Object]" || err === "Unknown error"
-              ? "Model initialization failed. Check the browser console for details."
-              : err;
-        } else {
-          errorMessage = err?.message || err?.toString?.() || "";
-          if (errorMessage === "[object Object]") {
-            errorMessage = JSON.stringify(err) || "Unknown error";
-          }
-        }
-        console.error("Error while initializing the model", errorMessage);
+        const errorMessage = formatErrorMessage(
+          err,
+          "Model initialization failed. Check the browser console for details.",
+        );
+        console.error("Error while initializing the model", err);
         options?.onError?.(errorMessage);
         return;
       }
@@ -131,20 +129,11 @@ export class WebLLMApi implements LLMApi {
       stopReason = completion.stopReason;
       usage = completion.usage;
     } catch (err: any) {
-      let errorMessage: string;
-      if (typeof err === "string") {
-        errorMessage =
-          err === "[object Object]" || err === "Unknown error"
-            ? "Chat completion failed. Check the browser console for details."
-            : err;
-      } else {
-        errorMessage = err?.message || err?.toString?.() || "";
-        if (errorMessage === "[object Object]") {
-          log.error(JSON.stringify(err));
-          errorMessage = JSON.stringify(err) || "Unknown error";
-        }
-      }
-      console.error("Error in chatCompletion", errorMessage);
+      let errorMessage = formatErrorMessage(
+        err,
+        "Chat completion failed. Check the browser console for details.",
+      );
+      console.error("Error in chatCompletion", err);
       if (
         errorMessage.includes("WebGPU") &&
         errorMessage.includes("compatibility chart")

@@ -8,6 +8,7 @@
   --white: rgba(255, 255, 255, 0.85);
   --black: #1e293b;
   --gray: #eef2f7;
+  --body-bg: radial-gradient(ellipse at 20% 20%, rgba(79, 70, 229, 0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(8, 145, 178, 0.04) 0%, transparent 50%), #eef2f7;
   --light-gray: #64748b;
   --primary: #4f46e5;
   --second: rgba(79, 70, 229, 0.08);
@@ -46,6 +47,7 @@
   --white: rgba(20, 20, 35, 0.75);
   --black: #e2e8f0;
   --gray: #0a0a12;
+  --body-bg: radial-gradient(ellipse at 20% 20%, rgba(129, 140, 248, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(34, 211, 238, 0.07) 0%, transparent 50%), #0a0a12;
   --light-gray: #94a3b8;
   --primary: #818cf8;
   --second: rgba(129, 140, 248, 0.12);
@@ -134,7 +136,7 @@ html {
 }
 
 body {
-  background-color: var(--gray);
+  background: var(--body-bg);
   color: var(--black);
   margin: 0;
   padding: 0;

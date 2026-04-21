@@ -1,5 +1,6 @@
 import log from "loglevel";
 import { WebWorkerMLCEngineHandler } from "@mlc-ai/web-llm";
+import { serializeError } from "../utils/error";
 
 class BetterWebWorkerMLCEngineHandler extends WebWorkerMLCEngineHandler {
   async handleTask<T>(uuid: string, task: () => Promise<T>): Promise<void> {
@@ -9,16 +10,7 @@ class BetterWebWorkerMLCEngineHandler extends WebWorkerMLCEngineHandler {
       this.postMessage(msg);
     } catch (err: any) {
       console.error("[WebLLM Worker] Task failed:", err);
-      let errStr: string;
-      if (typeof err === "string") {
-        errStr = err;
-      } else if (err?.message) {
-        errStr = err.message;
-      } else if (err?.toString) {
-        errStr = err.toString();
-      } else {
-        errStr = JSON.stringify(err) || "Unknown worker error";
-      }
+      const errStr = serializeError(err, "Unknown worker error");
       const msg = { kind: "throw" as const, uuid, content: errStr as any };
       this.postMessage(msg);
     }

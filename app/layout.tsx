@@ -114,9 +114,9 @@ export default function RootLayout({
           href="/favicon-16x16.png"
         />
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#062578" />
-        <meta name="msapplication-TileColor" content="#2b5797" />
-        <meta name="theme-color" content="#ffffff" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#4f46e5" />
+        <meta name="msapplication-TileColor" content="#4f46e5" />
+        <meta name="theme-color" content="#f0f4f8" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
