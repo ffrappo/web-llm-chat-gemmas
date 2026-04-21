@@ -1,13 +1,18 @@
 .input-range {
   border: var(--border-in-light);
-  border-radius: 10px;
-  padding: 5px 10px 5px 10px;
-  font-size: 12px;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-size: 13px;
   display: flex;
   justify-content: space-between;
   max-width: 40%;
+  background: var(--surface-solid);
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
 
   input[type="range"] {
-    max-width: calc(100% - 34px);
+    max-width: calc(100% - 40px);
+    flex: 1;
   }
 }
