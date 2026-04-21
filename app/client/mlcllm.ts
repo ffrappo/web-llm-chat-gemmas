@@ -14,6 +14,10 @@ export class MlcLLMApi implements LLMApi {
     this.endpoint = endpoint;
   }
 
+  isInitializing(): boolean {
+    return false;
+  }
+
   async chat(options: ChatOptions) {
     const { messages, config } = options;
 

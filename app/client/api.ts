@@ -74,4 +74,5 @@ export abstract class LLMApi {
   abstract chat(options: ChatOptions): Promise<void>;
   abstract abort(): Promise<void>;
   abstract models(): Promise<ModelRecord[] | Model[]>;
+  isInitializing?(): boolean;
 }

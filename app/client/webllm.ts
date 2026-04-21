@@ -36,7 +36,18 @@ type WebLLMHandler = ServiceWorkerWebLLMHandler | WebWorkerWebLLMHandler;
 export class WebLLMApi implements LLMApi {
   private llmConfig?: LLMConfig;
   private initialized = false;
+  private initializing = false;
+  onInitChange?: (initializing: boolean) => void;
   webllm: WebLLMHandler;
+
+  isInitializing(): boolean {
+    return this.initializing;
+  }
+
+  private setInitializing(value: boolean) {
+    this.initializing = value;
+    this.onInitChange?.(value);
+  }
 
   private getAppConfig(cache = this.llmConfig?.cache) {
     return {
@@ -104,6 +115,7 @@ export class WebLLMApi implements LLMApi {
         };
       }
       try {
+        this.setInitializing(true);
         await this.initModel(options.onUpdate);
       } catch (err: any) {
         const errorMessage = formatErrorMessage(
@@ -113,6 +125,8 @@ export class WebLLMApi implements LLMApi {
         console.error("Error while initializing the model", err);
         options?.onError?.(errorMessage);
         return;
+      } finally {
+        this.setInitializing(false);
       }
     }
 

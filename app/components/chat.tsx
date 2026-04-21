@@ -618,6 +618,20 @@ function ChatInner() {
   const llm =
     config.modelClientType === ModelClient.MLCLLM_API ? mlcllm : webllm;
 
+  const [isModelLoading, setIsModelLoading] = useState(false);
+
+  useEffect(() => {
+    if (config.modelClientType !== ModelClient.MLCLLM_API) {
+      webllm.onInitChange = setIsModelLoading;
+      return () => {
+        webllm.onInitChange = undefined;
+      };
+    }
+  }, [config.modelClientType, webllm]);
+
+  const isLoading =
+    config.modelClientType === ModelClient.MLCLLM_API ? false : isModelLoading;
+
   const models = config.models;
 
   // prompt hints
@@ -687,6 +701,7 @@ function ChatInner() {
 
   const onSubmit = (userInput: string) => {
     if (userInput.trim() === "") return;
+    if (isLoading) return;
 
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
@@ -1454,6 +1469,14 @@ function ChatInner() {
               className={styles["chat-input-send"]}
               type="primary"
               onClick={() => onUserStop()}
+            />
+          ) : isLoading ? (
+            <IconButton
+              icon={<LoadingButtonIcon />}
+              text="Loading model..."
+              className={styles["chat-input-send"]}
+              type="primary"
+              disabled
             />
           ) : (
             <IconButton
