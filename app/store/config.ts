@@ -1,10 +1,11 @@
-import { LogLevel, prebuiltAppConfig } from "@mlc-ai/web-llm";
+import { LogLevel } from "@mlc-ai/web-llm";
 import { ModelRecord } from "../client/api";
 import {
   DEFAULT_INPUT_TEMPLATE,
   DEFAULT_MODELS,
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
+  WEBLLM_APP_CONFIG,
 } from "../constant";
 import { createPersistStore } from "../utils/store";
 
@@ -79,7 +80,10 @@ export type ConfigType = {
   modelConfig: ModelConfig;
 };
 
-const DEFAULT_MODEL = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+const DEFAULT_MODEL = DEFAULT_MODELS[0].name as Model;
+const DEFAULT_MODEL_RECOMMENDED_CONFIG =
+  DEFAULT_MODELS.find((m) => m.name === DEFAULT_MODEL)?.recommended_config ??
+  {};
 
 const DEFAULT_MODEL_CONFIG: ModelConfig = {
   model: DEFAULT_MODEL,
@@ -88,14 +92,14 @@ const DEFAULT_MODEL_CONFIG: ModelConfig = {
   temperature: 1.0,
   top_p: 1,
   context_window_size:
-    prebuiltAppConfig.model_list.find((m) => m.model_id === DEFAULT_MODEL)
+    WEBLLM_APP_CONFIG.model_list.find((m) => m.model_id === DEFAULT_MODEL)
       ?.overrides?.context_window_size ?? 4096,
   max_tokens: 4000,
   presence_penalty: 0,
   frequency_penalty: 0,
 
   // Use recommended config to overwrite above parameters
-  ...DEFAULT_MODELS.find((m) => m.name === DEFAULT_MODEL)!.recommended_config,
+  ...DEFAULT_MODEL_RECOMMENDED_CONFIG,
 
   mlc_endpoint: "",
 };
@@ -219,13 +223,24 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 0.64,
+    version: 0.65,
     migrate: (persistedState, version) => {
-      if (version < 0.64) {
+      if (version < 0.65) {
+        const nextState = persistedState as any;
+        const persistedModel = nextState?.modelConfig?.model;
+        const hasPersistedModel = DEFAULT_MODELS.some(
+          (model) => model.name === persistedModel,
+        );
+
         return {
           ...DEFAULT_CONFIG,
-          ...(persistedState as any),
+          ...nextState,
           models: DEFAULT_MODELS as any as ModelRecord[],
+          modelConfig: {
+            ...DEFAULT_MODEL_CONFIG,
+            ...(nextState?.modelConfig ?? {}),
+            model: hasPersistedModel ? persistedModel : DEFAULT_MODEL,
+          },
         };
       }
       return persistedState;

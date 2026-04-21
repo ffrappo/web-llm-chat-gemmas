@@ -3,8 +3,9 @@ import { showToast } from "./components/ui-lib";
 import Locale from "./locales";
 import { RequestMessage } from "./client/api";
 import { Model } from "./store";
-import { ModelType, prebuiltAppConfig } from "@mlc-ai/web-llm";
+import { ModelType } from "@mlc-ai/web-llm";
 import { ChatImage } from "./typing";
+import { WEBLLM_APP_CONFIG } from "./constant";
 
 export function trimTopic(topic: string) {
   // Fix an issue where double quotes still show in the Indonesian language
@@ -272,7 +273,7 @@ export function getMessageImages(message: RequestMessage): ChatImage[] {
 }
 
 export const isVisionModel = (model: Model) =>
-  prebuiltAppConfig.model_list.find((m) => m.model_id === model)?.model_type ===
+  WEBLLM_APP_CONFIG.model_list.find((m) => m.model_id === model)?.model_type ===
   ModelType.VLM;
 
 // Fix various problems in webllm generation
@@ -285,7 +286,7 @@ export function fixMessage(message: string) {
 
 // Get model size from model id
 export function getSize(model_id: string): string | undefined {
-  const sizeRegex = /-(\d+(\.\d+)?[BK])-?/;
+  const sizeRegex = /-((?:E)?\d+(?:\.\d+)?[BK])-?/i;
   const match = model_id.match(sizeRegex);
   if (match) {
     return match[1];

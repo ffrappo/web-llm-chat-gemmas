@@ -17,20 +17,6 @@ export interface ModelSearchProps {
   onSelectModel: (model: string) => void;
 }
 
-const modelFamilies: {
-  [key: string]: {
-    name: string;
-    icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  };
-} = {};
-
-for (const modelDetail of modelDetailsList) {
-  modelFamilies[modelDetail.family] = {
-    name: modelDetail.name,
-    icon: modelDetail.icon,
-  };
-}
-
 interface SearchInputProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -75,7 +61,6 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     const modelDetail = modelDetailsList.find(
       (md) => modelFamily && modelFamily === md.family,
     );
-    console.log(model, modelFamily, modelDetail);
     return (
       <div className={style["model-icon"]}>
         {modelDetail?.icon ? <modelDetail.icon /> : <Cpu />}
@@ -83,9 +68,18 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     );
   };
 
-  const identifyModelFamily = (model: Model): ModelFamily | null => {
-    return config.models.find((m) => m.name === model)?.family || null;
-  };
+  const identifyModelFamily = useCallback(
+    (model: Model): ModelFamily | null => {
+      return config.models.find((m) => m.name === model)?.family || null;
+    },
+    [config.models],
+  );
+
+  const availableModelFamilies = modelDetailsList.filter((modelDetail) =>
+    availableModels.some(
+      (model) => identifyModelFamily(model as Model) === modelDetail.family,
+    ),
+  );
 
   const extractModelDetails = (model: string) => {
     const parts = model.split("-");
@@ -139,7 +133,7 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
         },
       );
     },
-    [],
+    [identifyModelFamily],
   );
 
   const handleToggleExpand = (modelName: string) => {
@@ -176,7 +170,13 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     }
 
     setFilteredModels(filtered);
-  }, [searchTerm, availableModels, selectedFamilies, sortAndGroupModels]);
+  }, [
+    searchTerm,
+    availableModels,
+    selectedFamilies,
+    identifyModelFamily,
+    sortAndGroupModels,
+  ]);
 
   const handleToggleFamilyFilter = (family: string) => {
     setSelectedFamilies((prev) =>
@@ -194,19 +194,6 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     }, 0);
   }, []);
 
-  const countModelsPerFamily = (
-    models: string[],
-  ): { [key: string]: number } => {
-    const counts: { [key: string]: number } = {};
-    for (const model of models) {
-      const family = identifyModelFamily(model);
-      if (family) {
-        counts[family] = (counts[family] || 0) + 1;
-      }
-    }
-    return counts;
-  };
-
   return (
     <div className="screen-model-container">
       <Modal title={Locale.ModelSelect.Title} onClose={onClose}>
@@ -216,12 +203,12 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
             setSearchTerm={setSearchTerm}
             inputRef={searchInputRef}
           />
-          <div className={style["model-family-filter"]}>
-            {Object.entries(modelFamilies).map(
-              ([key, { name, icon: Icon }]) => (
+          {availableModelFamilies.length > 1 && (
+            <div className={style["model-family-filter"]}>
+              {availableModelFamilies.map(({ family, name, icon: Icon }) => (
                 <IconButton
-                  key={key}
-                  onClick={() => handleToggleFamilyFilter(key)}
+                  key={family}
+                  onClick={() => handleToggleFamilyFilter(family)}
                   bordered
                   text={name}
                   icon={
@@ -229,11 +216,11 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
                       {Icon ? <Icon /> : <Cpu />}
                     </div>
                   }
-                  className={`${style["model-family-button"]}${selectedFamilies.includes(key) ? " " + style["selected-model-family"] : ""}`}
+                  className={`${style["model-family-button"]}${selectedFamilies.includes(family) ? " " + style["selected-model-family"] : ""}`}
                 />
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className={style["model-list"]}>
           {filteredModels.map((model) => (

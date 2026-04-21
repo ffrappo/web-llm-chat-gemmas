@@ -1,6 +1,5 @@
 import { prebuiltAppConfig } from "@mlc-ai/web-llm";
 import { ModelRecord } from "./client/api";
-import { getQuantization, getSize } from "./utils";
 
 export const OWNER = "mlc-ai";
 export const REPO = "web-llm-chat";
@@ -91,6 +90,29 @@ const qwen3_common_configs = {
     frequency_penalty: 0,
     top_p: 0.8,
   },
+};
+
+const GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
+const GEMMA4_MODEL_REPO =
+  "https://huggingface.co/cnhktyom/gemma-4-E2B-it-q4f16_1-MLC";
+
+const GEMMA4_WEBLLM_MODEL_LIST = [
+  {
+    // Official WebLLM builds do not yet ship Gemma 4, so this app uses a
+    // custom MLC/WebLLM-compatible artifact until upstream support lands.
+    model: GEMMA4_MODEL_REPO,
+    model_id: GEMMA4_MODEL_ID,
+    model_lib: `${GEMMA4_MODEL_REPO}/resolve/main/libs/${GEMMA4_MODEL_ID}-webgpu.wasm`,
+    required_features: ["shader-f16"],
+    overrides: {
+      context_window_size: 4096,
+    },
+  },
+] as typeof prebuiltAppConfig.model_list;
+
+export const WEBLLM_APP_CONFIG: typeof prebuiltAppConfig = {
+  ...prebuiltAppConfig,
+  model_list: GEMMA4_WEBLLM_MODEL_LIST,
 };
 
 const DEFAULT_MODEL_BASES: ModelRecord[] = [
@@ -919,6 +941,20 @@ const DEFAULT_MODEL_BASES: ModelRecord[] = [
       top_p: 0.8,
     },
   },
+  // Gemma 4
+  {
+    name: GEMMA4_MODEL_ID,
+    display_name: "Gemma 4",
+    provider: "Google",
+    family: ModelFamily.GEMMA,
+    recommended_config: {
+      temperature: 0.7,
+      context_window_size: 4096,
+      presence_penalty: 0,
+      frequency_penalty: 1,
+      top_p: 0.95,
+    },
+  },
   // Gemma 2
   {
     name: "gemma-2-2b-it-q4f16_1-MLC",
@@ -1533,22 +1569,28 @@ const DEFAULT_MODEL_BASES: ModelRecord[] = [
   },
 ];
 
+const ENABLED_MODEL_IDS = new Set(
+  WEBLLM_APP_CONFIG.model_list.map((model) => model.model_id),
+);
+
+function getModelSize(model_id: string): string | undefined {
+  const sizeRegex = /-((?:E)?\d+(?:\.\d+)?[BK])-?/i;
+  const match = model_id.match(sizeRegex);
+  return match?.[1];
+}
+
+function getModelQuantization(model_id: string): string | undefined {
+  const quantizationRegex = /-(q[0-9]f[0-9]+(?:_[0-9])?)-/;
+  const match = model_id.match(quantizationRegex);
+  return match?.[1];
+}
+
 export const DEFAULT_MODELS: ModelRecord[] = DEFAULT_MODEL_BASES.filter(
-  (model) => {
-    if (
-      !prebuiltAppConfig.model_list.map((m) => m.model_id).includes(model.name)
-    ) {
-      console.warn(
-        `Model ${model.name} not supported by current WebLLM version.`,
-      );
-      return false;
-    }
-    return true;
-  },
+  (model) => ENABLED_MODEL_IDS.has(model.name),
 ).map((model) => ({
   ...model,
-  size: getSize(model.name),
-  quantization: getQuantization(model.name),
+  size: getModelSize(model.name),
+  quantization: getModelQuantization(model.name),
 }));
 
 export const CHAT_PAGE_SIZE = 15;

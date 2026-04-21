@@ -4,7 +4,6 @@ import log from "loglevel";
 import { createContext } from "react";
 import {
   InitProgressReport,
-  prebuiltAppConfig,
   ChatCompletionMessageParam,
   ServiceWorkerMLCEngine,
   ChatCompletionChunk,
@@ -17,7 +16,7 @@ import {
 import { ChatOptions, LLMApi, LLMConfig, RequestMessage } from "./api";
 import { LogLevel } from "@mlc-ai/web-llm";
 import { fixMessage } from "../utils";
-import { DEFAULT_MODELS } from "../constant";
+import { DEFAULT_MODELS, WEBLLM_APP_CONFIG } from "../constant";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
 
@@ -44,7 +43,7 @@ export class WebLLMApi implements LLMApi {
   ) {
     const engineConfig = {
       appConfig: {
-        ...prebuiltAppConfig,
+        ...WEBLLM_APP_CONFIG,
         useIndexedDBCache: this.llmConfig?.cache === "index_db",
       },
       logLevel,
