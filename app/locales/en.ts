@@ -117,6 +117,22 @@ const en = {
     DeleteChat: "Confirm to delete the selected conversation?",
     DeleteToast: "Chat Deleted",
     Revert: "Revert",
+    ModelLoad: {
+      Title: (model: string) => `Preparing ${model}`,
+      Preparing: (model: string) => `Starting ${model} in your browser...`,
+      Downloading:
+        "Downloading the default model into browser storage. Chat unlocks automatically when it is ready.",
+      Cached:
+        "A cached copy was found locally. Finishing model startup before chat opens.",
+      Progress: (progress: number) => `${progress}% complete`,
+      Ready: (model: string) => `${model} is ready.`,
+      Failed:
+        "The default model could not finish loading. You can retry, or continue and switch models manually.",
+      Retry: "Retry",
+      Continue: "Continue Anyway",
+      ErrorFallback:
+        "Model preload failed. Check the browser console for more details.",
+    },
   },
   Settings: {
     Title: "Settings",
@@ -275,7 +291,7 @@ const en = {
     BotHello:
       "Hello! I'm an AI assistant that runs entirely in your web browser. Your messages and data never leave your computer — everything stays private on your device. How can I help you today?",
     BotHelloFirstTime:
-      "Welcome! I'm an AI assistant that runs entirely in your web browser. Your messages and data never leave your computer — everything stays private on your device. On your first chat, the AI model will download to your browser. After that, it works offline. How can I help you today?",
+      "Welcome! I'm an AI assistant that runs entirely in your web browser. Your messages and data never leave your computer — everything stays private on your device. On your first visit, the default AI model downloads to your browser before chat opens. After that, it works offline. How can I help you today?",
     Error: "Something went wrong, please try again later.",
     Prompt: {
       History: (content: string) =>

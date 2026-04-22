@@ -1,7 +1,9 @@
 import { LogLevel } from "@mlc-ai/web-llm";
 import { ModelRecord } from "../client/api";
 import {
+  DEFAULT_MODEL,
   DEFAULT_INPUT_TEMPLATE,
+  LEGACY_DEFAULT_MODEL,
   DEFAULT_MODELS,
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
@@ -80,13 +82,12 @@ export type ConfigType = {
   modelConfig: ModelConfig;
 };
 
-const DEFAULT_MODEL = DEFAULT_MODELS[0].name as Model;
 const DEFAULT_MODEL_RECOMMENDED_CONFIG =
   DEFAULT_MODELS.find((m) => m.name === DEFAULT_MODEL)?.recommended_config ??
   {};
 
 const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  model: DEFAULT_MODEL,
+  model: DEFAULT_MODEL as Model,
 
   // Chat configs
   temperature: 1.0,
@@ -223,14 +224,16 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 0.65,
+    version: 0.66,
     migrate: (persistedState, version) => {
-      if (version < 0.65) {
+      if (version < 0.66) {
         const nextState = persistedState as any;
         const persistedModel = nextState?.modelConfig?.model;
         const hasPersistedModel = DEFAULT_MODELS.some(
           (model) => model.name === persistedModel,
         );
+        const shouldUpgradeToGemmaDefault =
+          !persistedModel || persistedModel === LEGACY_DEFAULT_MODEL;
 
         return {
           ...DEFAULT_CONFIG,
@@ -239,7 +242,10 @@ export const useAppConfig = createPersistStore(
           modelConfig: {
             ...DEFAULT_MODEL_CONFIG,
             ...(nextState?.modelConfig ?? {}),
-            model: hasPersistedModel ? persistedModel : DEFAULT_MODEL,
+            model:
+              hasPersistedModel && !shouldUpgradeToGemmaDefault
+                ? persistedModel
+                : DEFAULT_MODEL,
           },
         };
       }

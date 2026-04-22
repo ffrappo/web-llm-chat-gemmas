@@ -1,7 +1,6 @@
 "use client";
 
 import log from "loglevel";
-import { createContext } from "react";
 import {
   InitProgressReport,
   ChatCompletionMessageParam,
@@ -11,6 +10,7 @@ import {
   WebWorkerMLCEngine,
   CompletionUsage,
   ChatCompletionFinishReason,
+  hasModelInCache,
 } from "@mlc-ai/web-llm";
 
 import { ChatOptions, LLMApi, LLMConfig, RequestMessage } from "./api";
@@ -20,6 +20,11 @@ import { DEFAULT_MODELS, WEBLLM_APP_CONFIG } from "../constant";
 import { formatErrorMessage } from "../utils/error";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
+
+export type WebLLMPreloadProgress = InitProgressReport & {
+  cached: boolean;
+  model: string;
+};
 
 type ServiceWorkerWebLLMHandler = {
   type: "serviceWorker";
@@ -37,6 +42,8 @@ export class WebLLMApi implements LLMApi {
   private llmConfig?: LLMConfig;
   private initialized = false;
   private initializing = false;
+  private initPromise?: Promise<void>;
+  private initPromiseKey?: string;
   onInitChange?: (initializing: boolean) => void;
   webllm: WebLLMHandler;
 
@@ -85,49 +92,123 @@ export class WebLLMApi implements LLMApi {
     }
   }
 
-  private async initModel(onUpdate?: (message: string, chunk: string) => void) {
-    if (!this.llmConfig) {
-      throw Error("llmConfig is undefined");
-    }
-    this.webllm.engine.setAppConfig(this.getAppConfig(this.llmConfig.cache));
-    this.webllm.engine.setInitProgressCallback((report: InitProgressReport) => {
-      onUpdate?.(report.text, report.text);
+  private getReloadKey(config: LLMConfig) {
+    return JSON.stringify({
+      model: config.model,
+      cache: config.cache,
+      temperature: config.temperature ?? null,
+      context_window_size: config.context_window_size ?? null,
+      top_p: config.top_p ?? null,
+      presence_penalty: config.presence_penalty ?? null,
+      frequency_penalty: config.frequency_penalty ?? null,
     });
-    await this.webllm.engine.reload(this.llmConfig.model, this.llmConfig);
+  }
+
+  private normalizeConfig(config: LLMConfig): LLMConfig {
+    const nextConfig = { ...config };
+
+    const isQwen3Model = nextConfig.model?.toLowerCase().startsWith("qwen3");
+    const isThinkingEnabled = nextConfig.enable_thinking === true;
+
+    if (isQwen3Model && isThinkingEnabled) {
+      nextConfig.temperature = 0.6;
+      nextConfig.top_p = 0.95;
+    }
+
+    return nextConfig;
+  }
+
+  private async initModel(
+    config: LLMConfig,
+    onUpdate?: (message: string, chunk: string) => void,
+    onProgress?: (report: WebLLMPreloadProgress) => void,
+  ) {
+    const appConfig = this.getAppConfig(config.cache);
+    const cached = await hasModelInCache(config.model, appConfig).catch(
+      () => false,
+    );
+
+    this.webllm.engine.setAppConfig(appConfig);
+    this.webllm.engine.setInitProgressCallback((report: InitProgressReport) => {
+      const progress = {
+        ...report,
+        cached,
+        model: config.model,
+      };
+      onUpdate?.(report.text, report.text);
+      onProgress?.(progress);
+    });
+    await this.webllm.engine.reload(config.model, config);
     this.initialized = true;
   }
 
-  async chat(options: ChatOptions): Promise<void> {
-    if (!this.initialized || this.isDifferentConfig(options.config)) {
-      this.llmConfig = { ...(this.llmConfig || {}), ...options.config };
-      // Check if this is a Qwen3 model with thinking mode enabled
-      const isQwen3Model = this.llmConfig?.model
-        ?.toLowerCase()
-        .startsWith("qwen3");
-      const isThinkingEnabled = this.llmConfig?.enable_thinking === true;
+  private async ensureModelLoaded(
+    config: LLMConfig,
+    options?: {
+      onUpdate?: (message: string, chunk: string) => void;
+      onProgress?: (report: WebLLMPreloadProgress) => void;
+    },
+  ) {
+    const nextConfig = this.normalizeConfig({
+      ...(this.llmConfig || {}),
+      ...config,
+    });
+    const nextReloadKey = this.getReloadKey(nextConfig);
+    const needsReload = this.isDifferentConfig(nextConfig);
 
-      // Apply special config for Qwen3 models with thinking mode enabled
-      if (isQwen3Model && isThinkingEnabled && this.llmConfig) {
-        this.llmConfig = {
-          ...this.llmConfig,
-          temperature: 0.6,
-          top_p: 0.95,
-        };
+    this.llmConfig = nextConfig;
+
+    if (!needsReload) {
+      return;
+    }
+
+    if (this.initPromise && this.initPromiseKey === nextReloadKey) {
+      await this.initPromise;
+      return;
+    }
+
+    this.initialized = false;
+
+    const initPromise = this.initModel(
+      nextConfig,
+      options?.onUpdate,
+      options?.onProgress,
+    );
+    this.initPromise = initPromise;
+    this.initPromiseKey = nextReloadKey;
+
+    try {
+      this.setInitializing(true);
+      await initPromise;
+    } finally {
+      if (this.initPromise === initPromise) {
+        this.initPromise = undefined;
+        this.initPromiseKey = undefined;
       }
-      try {
-        this.setInitializing(true);
-        await this.initModel(options.onUpdate);
-      } catch (err: any) {
-        const errorMessage = formatErrorMessage(
-          err,
-          "Model initialization failed. Check the browser console for details.",
-        );
-        console.error("Error while initializing the model", err);
-        options?.onError?.(errorMessage);
-        return;
-      } finally {
-        this.setInitializing(false);
-      }
+      this.setInitializing(false);
+    }
+  }
+
+  async preload(
+    config: LLMConfig,
+    onProgress?: (report: WebLLMPreloadProgress) => void,
+  ) {
+    await this.ensureModelLoaded(config, { onProgress });
+  }
+
+  async chat(options: ChatOptions): Promise<void> {
+    try {
+      await this.ensureModelLoaded(options.config, {
+        onUpdate: options.onUpdate,
+      });
+    } catch (err: any) {
+      const errorMessage = formatErrorMessage(
+        err,
+        "Model initialization failed. Check the browser console for details.",
+      );
+      console.error("Error while initializing the model", err);
+      options?.onError?.(errorMessage);
+      return;
     }
 
     let reply: string | null = "";
@@ -175,7 +256,7 @@ export class WebLLMApi implements LLMApi {
   }
 
   private isDifferentConfig(config: LLMConfig): boolean {
-    if (!this.llmConfig) {
+    if (!this.initialized || !this.llmConfig) {
       return true;
     }
 
@@ -184,15 +265,17 @@ export class WebLLMApi implements LLMApi {
       return true;
     }
 
+    if (this.llmConfig.cache !== config.cache) {
+      return true;
+    }
+
     // Compare optional fields
     const optionalFields: (keyof LLMConfig)[] = [
       "temperature",
       "context_window_size",
       "top_p",
-      "stream",
       "presence_penalty",
       "frequency_penalty",
-      "enable_thinking",
     ];
 
     for (const field of optionalFields) {

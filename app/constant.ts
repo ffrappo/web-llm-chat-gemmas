@@ -95,6 +95,7 @@ const qwen3_common_configs = {
 const GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
 const GEMMA4_MODEL_REPO =
   "https://huggingface.co/welcoma/gemma-4-E2B-it-q4f16_1-MLC";
+export const DEFAULT_MODEL_ID = GEMMA4_MODEL_ID;
 
 const GEMMA4_WEBLLM_MODEL_LIST = [
   {
@@ -1593,13 +1594,29 @@ function getModelQuantization(model_id: string): string | undefined {
   return match?.[1];
 }
 
-export const DEFAULT_MODELS: ModelRecord[] = DEFAULT_MODEL_BASES.filter(
+const AVAILABLE_DEFAULT_MODELS: ModelRecord[] = DEFAULT_MODEL_BASES.filter(
   (model) => ENABLED_MODEL_IDS.has(model.name),
 ).map((model) => ({
   ...model,
   size: getModelSize(model.name),
   quantization: getModelQuantization(model.name),
 }));
+
+export const LEGACY_DEFAULT_MODEL =
+  AVAILABLE_DEFAULT_MODELS[0]?.name ?? DEFAULT_MODEL_ID;
+
+export const DEFAULT_MODELS: ModelRecord[] = [
+  ...AVAILABLE_DEFAULT_MODELS.filter(
+    (model) => model.name === DEFAULT_MODEL_ID,
+  ),
+  ...AVAILABLE_DEFAULT_MODELS.filter(
+    (model) => model.name !== DEFAULT_MODEL_ID,
+  ),
+];
+
+export const DEFAULT_MODEL =
+  DEFAULT_MODELS.find((model) => model.name === DEFAULT_MODEL_ID)?.name ??
+  DEFAULT_MODELS[0].name;
 
 export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
