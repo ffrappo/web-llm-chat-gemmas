@@ -25,16 +25,18 @@ import { ErrorBoundary } from "./error";
 import { getISOLang, getLang } from "../locales";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
-import { WebLLMApi } from "../client/webllm";
+import { WebLLMApi, WebLLMPreloadProgress } from "../client/webllm";
 import { ModelClient, useChatStore } from "../store";
 import { MLCLLMContext, WebLLMContext } from "../context";
 import { MlcLLMApi } from "../client/mlcllm";
+import { formatErrorMessage } from "../utils/error";
+import { IconButton } from "./button";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
     <div className={styles["loading-content"] + " no-dark"}>
       {!props.noLogo && (
-        <div className={styles["loading-content-logo"] + " no-dark mlc-icon"}>
+        <div className={styles["loading-content-logo"] + " no-dark"}>
           <MlcIcon />
         </div>
       )}
@@ -124,6 +126,94 @@ const loadAsyncFonts = () => {
   linkEl.href = "/fonts/font.css";
   document.head.appendChild(linkEl);
 };
+
+type InitialModelLoadState = {
+  phase: "idle" | "loading" | "ready" | "error";
+  modelName: string;
+  progress: number;
+  text: string;
+  cached: boolean | null;
+  error?: string;
+};
+
+function getModelDisplayName(modelId: string) {
+  return DEFAULT_MODELS.find((model) => model.name === modelId)?.display_name;
+}
+
+function normalizeProgress(progress: number) {
+  if (!Number.isFinite(progress)) {
+    return 0;
+  }
+
+  const normalized = progress > 1 ? progress / 100 : progress;
+  return Math.min(1, Math.max(0, normalized));
+}
+
+function InitialModelLoadOverlay(props: {
+  state: InitialModelLoadState;
+  onRetry: () => void;
+  onContinue: () => void;
+}) {
+  const progressPercent = Math.round(props.state.progress * 100);
+  const isError = props.state.phase === "error";
+
+  return (
+    <div className={styles["bootstrap-overlay"] + " no-dark"}>
+      <div className={styles["bootstrap-card"]}>
+        <div className={styles["bootstrap-logo"] + " mlc-icon"}>
+          <MlcIcon />
+        </div>
+
+        <div className={styles["bootstrap-title"]}>
+          {Locale.Home.ModelLoad.Title(props.state.modelName)}
+        </div>
+        <div className={styles["bootstrap-subtitle"]}>
+          {isError
+            ? Locale.Home.ModelLoad.Failed
+            : props.state.cached
+              ? Locale.Home.ModelLoad.Cached
+              : Locale.Home.ModelLoad.Downloading}
+        </div>
+
+        {!isError && (
+          <div className={styles["bootstrap-spinner"]}>
+            <LoadingIcon />
+          </div>
+        )}
+
+        <div className={styles["bootstrap-progress-track"]}>
+          <div
+            className={styles["bootstrap-progress-bar"]}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <div className={styles["bootstrap-progress-label"]}>
+          {Locale.Home.ModelLoad.Progress(progressPercent)}
+        </div>
+
+        <div className={styles["bootstrap-status"]}>
+          {props.state.error ?? props.state.text}
+        </div>
+
+        {isError && (
+          <div className={styles["bootstrap-actions"]}>
+            <IconButton
+              type="primary"
+              text={Locale.Home.ModelLoad.Retry}
+              onClick={props.onRetry}
+            />
+            <IconButton
+              bordered
+              text={Locale.Home.ModelLoad.Continue}
+              onClick={props.onContinue}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function Screen() {
   const config = useAppConfig();
@@ -382,8 +472,22 @@ const useModels = (mlcllm: MlcLLMApi | undefined) => {
 
 export function Home() {
   const hasHydrated = useHasHydrated();
+  const config = useAppConfig();
   const { webllm, isWebllmActive } = useWebLLM();
   const mlcllm = useMlcLLM();
+  const hasTriggeredAutoPreload = useRef(false);
+  const lastHandledPreloadRetryKey = useRef<number | null>(null);
+  const [preloadRetryKey, setPreloadRetryKey] = useState(0);
+  const [allowContinueWithoutPreload, setAllowContinueWithoutPreload] =
+    useState(false);
+  const [initialModelLoad, setInitialModelLoad] =
+    useState<InitialModelLoadState>({
+      phase: "idle",
+      modelName: "",
+      progress: 0,
+      text: "",
+      cached: null,
+    });
 
   useSwitchTheme();
   useHtmlLang();
@@ -392,13 +496,120 @@ export function Home() {
   useModels(mlcllm);
   useLogLevel(webllm);
 
-  if (!hasHydrated || !webllm || !isWebllmActive) {
+  useEffect(() => {
+    if (!hasHydrated || !webllm || !isWebllmActive) {
+      return;
+    }
+
+    if (config.modelClientType !== ModelClient.WEBLLM) {
+      setInitialModelLoad((state) =>
+        state.phase === "ready"
+          ? state
+          : {
+              ...state,
+              phase: "ready",
+              progress: 1,
+            },
+      );
+      return;
+    }
+
+    const shouldAutoPreload = !hasTriggeredAutoPreload.current;
+    const shouldRetry =
+      preloadRetryKey > 0 &&
+      lastHandledPreloadRetryKey.current !== preloadRetryKey;
+
+    if (!shouldAutoPreload && !shouldRetry) {
+      return;
+    }
+
+    hasTriggeredAutoPreload.current = true;
+    lastHandledPreloadRetryKey.current = preloadRetryKey;
+    setAllowContinueWithoutPreload(false);
+
+    let isCancelled = false;
+    const modelName =
+      getModelDisplayName(config.modelConfig.model) ?? config.modelConfig.model;
+    const preloadConfig = {
+      ...config.modelConfig,
+      cache: config.cacheType,
+      enable_thinking: config.enableThinking,
+    };
+
+    setInitialModelLoad({
+      phase: "loading",
+      modelName,
+      progress: 0,
+      text: Locale.Home.ModelLoad.Preparing(modelName),
+      cached: null,
+    });
+
+    webllm
+      .preload(preloadConfig, (report: WebLLMPreloadProgress) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setInitialModelLoad({
+          phase: "loading",
+          modelName: getModelDisplayName(report.model) ?? report.model,
+          progress: normalizeProgress(report.progress),
+          text: report.text,
+          cached: report.cached,
+        });
+      })
+      .then(() => {
+        if (isCancelled) {
+          return;
+        }
+
+        setInitialModelLoad((state) => ({
+          ...state,
+          phase: "ready",
+          progress: 1,
+          text: Locale.Home.ModelLoad.Ready(state.modelName || modelName),
+          error: undefined,
+        }));
+      })
+      .catch((error) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setInitialModelLoad((state) => ({
+          ...state,
+          phase: "error",
+          error: formatErrorMessage(error, Locale.Home.ModelLoad.ErrorFallback),
+        }));
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    config.cacheType,
+    config.enableThinking,
+    config.modelClientType,
+    config.modelConfig,
+    hasHydrated,
+    isWebllmActive,
+    preloadRetryKey,
+    webllm,
+  ]);
+
+  if (!hasHydrated || !webllm) {
     return <Loading />;
   }
 
   if (!isWebllmActive) {
     return <ErrorScreen message={Locale.ServiceWorker.Error} />;
   }
+
+  const showInitialModelOverlay =
+    config.modelClientType === ModelClient.WEBLLM &&
+    !allowContinueWithoutPreload &&
+    (initialModelLoad.phase === "loading" ||
+      initialModelLoad.phase === "error");
 
   return (
     <ErrorBoundary>
@@ -409,6 +620,13 @@ export function Home() {
           </MLCLLMContext.Provider>
         </WebLLMContext.Provider>
       </Router>
+      {showInitialModelOverlay && (
+        <InitialModelLoadOverlay
+          state={initialModelLoad}
+          onRetry={() => setPreloadRetryKey((retryKey) => retryKey + 1)}
+          onContinue={() => setAllowContinueWithoutPreload(true)}
+        />
+      )}
     </ErrorBoundary>
   );
 }

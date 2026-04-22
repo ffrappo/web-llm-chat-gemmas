@@ -134,51 +134,19 @@
 
 .sidebar-header {
   position: relative;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 20px;
+  padding-bottom: 20px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 
   .sidebar-title-container {
     flex: 1 1;
   }
-
-  .sidebar-logo {
-    flex: 0 0 48px;
-  }
 }
 
-.sidebar-logo {
-  height: 48px;
-  width: 48px;
-  padding: 6px;
-  border-radius: 14px;
-  background: var(--gradient-subtle);
-  border: 1px solid rgba(128, 128, 128, 0.08);
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
-  svg {
-    width: 100%;
-    height: 100%;
-    opacity: 0.95;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  &:hover {
-    box-shadow: var(--glow-primary);
-    transform: translateY(-1px);
-
-    svg {
-      transform: scale(1.08) rotate(4deg);
-    }
-  }
-}
 
 .sidebar-title {
   font-size: 18px;
@@ -222,6 +190,7 @@
     background-color: var(--surface-hover);
     transform: translateY(-1px);
     box-shadow: var(--shadow);
+    border-color: rgba(128, 128, 128, 0.08);
   }
 }
 
@@ -287,23 +256,13 @@
 .narrow-sidebar {
   .sidebar-header {
     display: block;
+    padding-top: 24px;
+    padding-bottom: 12px;
   }
 
   .sidebar-title,
   .sidebar-sub-title {
     display: none;
-  }
-
-  .sidebar-logo {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    height: 40px;
-    width: 40px;
-    margin: 0 auto;
-    flex: inherit;
-    padding: 5px;
-    border-radius: 12px;
   }
 
   .sidebar-header-bar {
@@ -404,10 +363,10 @@
 
   .loading-content-logo {
     position: relative;
-    width: 64px;
-    height: 64px;
-    padding: 10px;
-    border-radius: 20px;
+    width: 56px;
+    height: 56px;
+    padding: 14px;
+    border-radius: 16px;
     background: var(--gradient-subtle);
     border: 1px solid rgba(128, 128, 128, 0.08);
     box-shadow: var(--glow-primary);
@@ -415,6 +374,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--mlc-icon-color);
 
     svg {
       width: 100%;
@@ -433,6 +393,133 @@
   padding: 4rem;
   text-align: center;
   background: var(--gradient-subtle);
+}
+
+.bootstrap-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(79, 70, 229, 0.18), transparent 52%),
+    rgba(15, 23, 42, 0.26);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.bootstrap-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-solid);
+  border: var(--border-in-light);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.bootstrap-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  padding: 14px;
+  background: var(--gradient-subtle);
+  box-shadow: var(--glow-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.bootstrap-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.bootstrap-subtitle {
+  font-size: 14px;
+  color: var(--light-gray);
+  max-width: 38ch;
+  line-height: 1.5;
+}
+
+.bootstrap-spinner {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bootstrap-progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(100, 116, 139, 0.16);
+  border: 1px solid rgba(100, 116, 139, 0.12);
+}
+
+.bootstrap-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  transition: width 0.2s ease;
+}
+
+.bootstrap-progress-label {
+  align-self: stretch;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--light-gray);
+}
+
+.bootstrap-status {
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--gray);
+  color: var(--black);
+  line-height: 1.45;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bootstrap-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+@media only screen and (max-width: 600px) {
+  .bootstrap-card {
+    padding: 24px 18px;
+    border-radius: 20px;
+  }
+
+  .bootstrap-title {
+    font-size: 24px;
+  }
+
+  .bootstrap-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .rtl-screen {

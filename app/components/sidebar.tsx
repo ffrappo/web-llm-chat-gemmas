@@ -4,7 +4,6 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/gear.svg";
-import MlcIcon from "../icons/mlc.svg";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
 import TemplateIcon from "../icons/chat.svg";
@@ -164,9 +163,6 @@ export function SideBar(props: { className?: string }) {
         <div className={styles["sidebar-title-container"]}>
           <div className={styles["sidebar-title"]}>{Locale.Title}</div>
           <div className={styles["sidebar-sub-title"]}>{Locale.Subtitle}</div>
-        </div>
-        <div className={styles["sidebar-logo"] + " no-dark mlc-icon"}>
-          <MlcIcon />
         </div>
       </div>
 
