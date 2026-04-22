@@ -1,6 +1,9 @@
 import log from "loglevel";
 import { WebWorkerMLCEngineHandler } from "@mlc-ai/web-llm";
 import { serializeError } from "../utils/error";
+import { installResumableArtifactDownloads } from "../utils/resumable-artifacts";
+
+installResumableArtifactDownloads();
 
 class BetterWebWorkerMLCEngineHandler extends WebWorkerMLCEngineHandler {
   async handleTask<T>(uuid: string, task: () => Promise<T>): Promise<void> {

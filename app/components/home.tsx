@@ -25,7 +25,11 @@ import { ErrorBoundary } from "./error";
 import { getISOLang, getLang } from "../locales";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
-import { WebLLMApi, WebLLMPreloadProgress } from "../client/webllm";
+import {
+  WebLLMApi,
+  type WebLLMPreloadPhase,
+  type WebLLMPreloadProgress,
+} from "../client/webllm";
 import { ModelClient, useChatStore } from "../store";
 import { MLCLLMContext, WebLLMContext } from "../context";
 import { MlcLLMApi } from "../client/mlcllm";
@@ -127,8 +131,19 @@ const loadAsyncFonts = () => {
   document.head.appendChild(linkEl);
 };
 
+const BOOTSTRAP_PHASES: Exclude<WebLLMPreloadPhase, "ready">[] = [
+  "checkingCache",
+  "preparingRuntime",
+  "requestingGpu",
+  "fetchingModelFiles",
+  "loadingModel",
+  "compilingShaders",
+  "finalizing",
+];
+
 type InitialModelLoadState = {
   phase: "idle" | "loading" | "ready" | "error";
+  stage: WebLLMPreloadPhase;
   modelName: string;
   progress: number;
   text: string;
@@ -140,13 +155,37 @@ function getModelDisplayName(modelId: string) {
   return DEFAULT_MODELS.find((model) => model.name === modelId)?.display_name;
 }
 
-function normalizeProgress(progress: number) {
-  if (!Number.isFinite(progress)) {
-    return 0;
+function getBootstrapPhaseState(
+  phase: (typeof BOOTSTRAP_PHASES)[number],
+  currentPhase: WebLLMPreloadPhase,
+  isError: boolean,
+) {
+  const currentIndex = BOOTSTRAP_PHASES.indexOf(
+    currentPhase as (typeof BOOTSTRAP_PHASES)[number],
+  );
+  const phaseIndex = BOOTSTRAP_PHASES.indexOf(phase);
+
+  if (currentIndex === -1) {
+    return "pending";
   }
 
-  const normalized = progress > 1 ? progress / 100 : progress;
-  return Math.min(1, Math.max(0, normalized));
+  if (phaseIndex < currentIndex) {
+    return "done";
+  }
+
+  if (phaseIndex > currentIndex) {
+    return "pending";
+  }
+
+  return isError ? "error" : "current";
+}
+
+function getBootstrapPhaseLabel(phase: WebLLMPreloadPhase) {
+  return Locale.Home.ModelLoad.Phases[phase];
+}
+
+function getBootstrapPhaseDescription(phase: WebLLMPreloadPhase) {
+  return Locale.Home.ModelLoad.PhaseDescription[phase];
 }
 
 function InitialModelLoadOverlay(props: {
@@ -156,6 +195,9 @@ function InitialModelLoadOverlay(props: {
 }) {
   const progressPercent = Math.round(props.state.progress * 100);
   const isError = props.state.phase === "error";
+  const phaseDescription = isError
+    ? Locale.Home.ModelLoad.Failed
+    : getBootstrapPhaseDescription(props.state.stage);
 
   return (
     <div className={styles["bootstrap-overlay"] + " no-dark"}>
@@ -167,19 +209,45 @@ function InitialModelLoadOverlay(props: {
         <div className={styles["bootstrap-title"]}>
           {Locale.Home.ModelLoad.Title(props.state.modelName)}
         </div>
-        <div className={styles["bootstrap-subtitle"]}>
-          {isError
-            ? Locale.Home.ModelLoad.Failed
-            : props.state.cached
-              ? Locale.Home.ModelLoad.Cached
-              : Locale.Home.ModelLoad.Downloading}
-        </div>
+        <div className={styles["bootstrap-subtitle"]}>{phaseDescription}</div>
 
         {!isError && (
           <div className={styles["bootstrap-spinner"]}>
             <LoadingIcon />
           </div>
         )}
+
+        <div className={styles["bootstrap-phase-list"]}>
+          <div className={styles["bootstrap-phase-title"]}>
+            {Locale.Home.ModelLoad.PhaseTitle}
+          </div>
+
+          <div className={styles["bootstrap-phase-items"]}>
+            {BOOTSTRAP_PHASES.map((phase, index) => {
+              const phaseState = getBootstrapPhaseState(
+                phase,
+                props.state.stage,
+                isError,
+              );
+
+              return (
+                <div
+                  key={phase}
+                  className={`${styles["bootstrap-phase-item"]} ${
+                    styles[`bootstrap-phase-item-${phaseState}`]
+                  }`}
+                >
+                  <div className={styles["bootstrap-phase-marker"]}>
+                    {index + 1}
+                  </div>
+                  <div className={styles["bootstrap-phase-label"]}>
+                    {getBootstrapPhaseLabel(phase)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className={styles["bootstrap-progress-track"]}>
           <div
@@ -483,6 +551,7 @@ export function Home() {
   const [initialModelLoad, setInitialModelLoad] =
     useState<InitialModelLoadState>({
       phase: "idle",
+      stage: "checkingCache",
       modelName: "",
       progress: 0,
       text: "",
@@ -508,6 +577,7 @@ export function Home() {
           : {
               ...state,
               phase: "ready",
+              stage: "ready",
               progress: 1,
             },
       );
@@ -538,6 +608,7 @@ export function Home() {
 
     setInitialModelLoad({
       phase: "loading",
+      stage: "checkingCache",
       modelName,
       progress: 0,
       text: Locale.Home.ModelLoad.Preparing(modelName),
@@ -552,8 +623,9 @@ export function Home() {
 
         setInitialModelLoad({
           phase: "loading",
+          stage: report.phase,
           modelName: getModelDisplayName(report.model) ?? report.model,
-          progress: normalizeProgress(report.progress),
+          progress: report.progress,
           text: report.text,
           cached: report.cached,
         });
@@ -566,6 +638,7 @@ export function Home() {
         setInitialModelLoad((state) => ({
           ...state,
           phase: "ready",
+          stage: "ready",
           progress: 1,
           text: Locale.Home.ModelLoad.Ready(state.modelName || modelName),
           error: undefined,

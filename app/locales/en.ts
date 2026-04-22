@@ -132,6 +132,31 @@ const en = {
       Continue: "Continue Anyway",
       ErrorFallback:
         "Model preload failed. Check the browser console for more details.",
+      PhaseTitle: "Startup phases",
+      Phases: {
+        checkingCache: "Check local cache",
+        preparingRuntime: "Prepare runtime",
+        requestingGpu: "Connect to WebGPU",
+        fetchingModelFiles: "Get model files",
+        loadingModel: "Load into GPU",
+        compilingShaders: "Compile GPU shaders",
+        finalizing: "Finalize startup",
+        ready: "Ready",
+      },
+      PhaseDescription: {
+        checkingCache:
+          "Checking browser storage for an existing model before startup continues.",
+        preparingRuntime:
+          "Preparing the runtime files and model configuration needed to launch.",
+        requestingGpu:
+          "Connecting to a compatible WebGPU device on this machine.",
+        fetchingModelFiles:
+          "Fetching or reusing the model files required for offline use.",
+        loadingModel: "Loading model weights from storage into GPU memory.",
+        compilingShaders: "Compiling the GPU programs needed for inference.",
+        finalizing: "Completing the last startup steps before chat unlocks.",
+        ready: "Startup complete.",
+      },
     },
   },
   Settings: {

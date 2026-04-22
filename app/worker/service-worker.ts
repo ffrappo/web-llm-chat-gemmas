@@ -3,9 +3,12 @@ import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
 import { serializeError } from "../utils/error";
+import { installResumableArtifactDownloads } from "../utils/resumable-artifacts";
 
 declare const self: ServiceWorkerGlobalScope;
 const FORNACE_WEBLLM_CHAT_CACHE = "fornace-webllm-chat-cache";
+
+installResumableArtifactDownloads();
 
 class BetterServiceWorkerMLCEngineHandler extends ServiceWorkerMLCEngineHandler {
   async handleTask<T>(uuid: string, task: () => Promise<T>): Promise<void> {

@@ -21,10 +21,108 @@ import { formatErrorMessage } from "../utils/error";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
 
-export type WebLLMPreloadProgress = InitProgressReport & {
-  cached: boolean;
+export type WebLLMPreloadPhase =
+  | "checkingCache"
+  | "preparingRuntime"
+  | "requestingGpu"
+  | "fetchingModelFiles"
+  | "loadingModel"
+  | "compilingShaders"
+  | "finalizing"
+  | "ready";
+
+export type WebLLMPreloadProgress = {
+  cached: boolean | null;
   model: string;
+  phase: WebLLMPreloadPhase;
+  progress: number;
+  phaseProgress: number;
+  text: string;
+  timeElapsed: number;
 };
+
+const PRELOAD_PHASE_PROGRESS: Record<
+  WebLLMPreloadPhase,
+  readonly [number, number]
+> = {
+  checkingCache: [0, 0.05],
+  preparingRuntime: [0.05, 0.14],
+  requestingGpu: [0.14, 0.24],
+  fetchingModelFiles: [0.24, 0.72],
+  loadingModel: [0.72, 0.9],
+  compilingShaders: [0.9, 0.98],
+  finalizing: [0.98, 1],
+  ready: [1, 1],
+};
+
+function normalizeUnitProgress(progress: number) {
+  if (!Number.isFinite(progress)) {
+    return 0;
+  }
+
+  const normalized = progress > 1 ? progress / 100 : progress;
+  return Math.min(1, Math.max(0, normalized));
+}
+
+function getOverallPreloadProgress(
+  phase: WebLLMPreloadPhase,
+  phaseProgress: number,
+) {
+  const [start, end] = PRELOAD_PHASE_PROGRESS[phase];
+  return start + (end - start) * normalizeUnitProgress(phaseProgress);
+}
+
+function inferPreloadPhase(
+  text: string,
+  fallbackPhase: WebLLMPreloadPhase,
+): WebLLMPreloadPhase {
+  const normalized = text.trim().toLowerCase();
+
+  if (
+    normalized.startsWith("start to fetch params") ||
+    normalized.startsWith("fetching param cache[")
+  ) {
+    return "fetchingModelFiles";
+  }
+
+  if (normalized.startsWith("loading model from cache[")) {
+    return "loadingModel";
+  }
+
+  if (normalized.startsWith("loading gpu shader modules[")) {
+    return "compilingShaders";
+  }
+
+  if (normalized.startsWith("finish loading on ")) {
+    return "finalizing";
+  }
+
+  return fallbackPhase;
+}
+
+function formatPreloadText(
+  text: string,
+  phase: WebLLMPreloadPhase,
+  cached: boolean | null,
+) {
+  const normalized = text.trim();
+
+  if (
+    phase === "fetchingModelFiles" &&
+    normalized === "Start to fetch params"
+  ) {
+    return cached
+      ? "Preparing model files from browser storage."
+      : "Starting model file transfer into browser storage.";
+  }
+
+  return normalized
+    .replace(/^Fetching param cache\[/, "Fetching model files [")
+    .replace(/^Loading model from cache\[/, "Loading model into GPU [")
+    .replace(/^Loading GPU shader modules\[/, "Compiling GPU shaders [")
+    .replace(/completed/g, "complete")
+    .replace(/secs elapsed/g, "s elapsed");
+}
 
 type ServiceWorkerWebLLMHandler = {
   type: "serviceWorker";
@@ -124,20 +222,81 @@ export class WebLLMApi implements LLMApi {
     onProgress?: (report: WebLLMPreloadProgress) => void,
   ) {
     const appConfig = this.getAppConfig(config.cache);
-    const cached = await hasModelInCache(config.model, appConfig).catch(
-      () => false,
+    let cached: boolean | null = null;
+    let currentPhase: WebLLMPreloadPhase = "checkingCache";
+
+    const emitProgress = (
+      phase: WebLLMPreloadPhase,
+      text: string,
+      options?: {
+        cached?: boolean | null;
+        phaseProgress?: number;
+        timeElapsed?: number;
+      },
+    ) => {
+      currentPhase = phase;
+
+      const resolvedCached = options?.cached ?? cached;
+      const phaseProgress = normalizeUnitProgress(options?.phaseProgress ?? 0);
+      const progress = {
+        cached: resolvedCached,
+        model: config.model,
+        phase,
+        progress: getOverallPreloadProgress(phase, phaseProgress),
+        phaseProgress,
+        timeElapsed: options?.timeElapsed ?? 0,
+        text,
+      };
+
+      onUpdate?.(text, text);
+      onProgress?.(progress);
+    };
+
+    emitProgress(
+      "checkingCache",
+      "Checking browser storage for an existing model copy.",
+    );
+
+    cached = await hasModelInCache(config.model, appConfig).catch(() => false);
+
+    emitProgress(
+      "preparingRuntime",
+      cached
+        ? "Cached model files found. Preparing runtime files and startup config."
+        : "No cached model files found. Preparing runtime files before download begins.",
+      {
+        cached,
+      },
     );
 
     this.webllm.engine.setAppConfig(appConfig);
     this.webllm.engine.setInitProgressCallback((report: InitProgressReport) => {
+      const phase = inferPreloadPhase(report.text, currentPhase);
+      const text = formatPreloadText(report.text, phase, cached);
       const progress = {
-        ...report,
         cached,
         model: config.model,
+        phase,
+        progress: getOverallPreloadProgress(phase, report.progress),
+        phaseProgress: normalizeUnitProgress(report.progress),
+        timeElapsed: report.timeElapsed,
+        text,
       };
-      onUpdate?.(report.text, report.text);
+      currentPhase = phase;
+      onUpdate?.(text, text);
       onProgress?.(progress);
     });
+
+    emitProgress(
+      "requestingGpu",
+      cached
+        ? "Connecting to WebGPU and opening the cached model."
+        : "Connecting to WebGPU and preparing the first model transfer.",
+      {
+        cached,
+      },
+    );
+
     await this.webllm.engine.reload(config.model, config);
     this.initialized = true;
   }
