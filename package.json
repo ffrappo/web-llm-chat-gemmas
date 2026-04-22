@@ -11,6 +11,7 @@
     "export": "cross-env BUILD_MODE=export next build",
     "export:dev": "cross-env BUILD_MODE=export next dev",
     "prompts": "node ./scripts/fetch-prompts.mjs",
+    "postinstall": "node ./scripts/patch-web-llm.mjs",
     "prepare": "husky install",
     "proxy-dev": "sh ./scripts/init-proxy.sh && proxychains -f ./scripts/proxychains.conf yarn dev"
   },

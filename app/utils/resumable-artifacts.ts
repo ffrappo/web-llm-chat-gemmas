@@ -6,7 +6,9 @@ const META_STORE = "download-meta";
 const CHUNK_STORE = "download-chunks";
 const CHUNK_URL_INDEX = "url";
 const CHUNK_SIZE = 8 * 1024 * 1024;
-const MAX_CHUNK_CONCURRENCY = 4;
+const DEFAULT_CHUNK_CONCURRENCY = 4;
+const LOW_MEMORY_CHUNK_CONCURRENCY = 2;
+const LOW_MEMORY_TOP_LEVEL_ARTIFACT_CONCURRENCY = 1;
 const MIN_RESUMABLE_BYTES = 1 * 1024 * 1024;
 const STALE_ARTIFACT_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -54,8 +56,12 @@ type ArtifactProbeResult =
 const inflightArtifactResponses = new Map<string, Promise<Response>>();
 const artifactBasePrefixes = new Set<string>();
 const exactArtifactUrls = new Set<string>();
+const pendingLowMemoryArtifactRequests: Array<() => void> = [];
 
 let resumeDBPromise: Promise<IDBDatabase> | undefined;
+let activeLowMemoryArtifactRequests = 0;
+let lowMemoryArtifactRuntime: boolean | undefined;
+let lowMemoryArtifactModeLogged = false;
 
 for (const modelRecord of WEBLLM_APP_CONFIG.model_list) {
   artifactBasePrefixes.add(
@@ -81,6 +87,93 @@ function normalizeArtifactUrl(url: string) {
 
 function ensureTrailingSlash(url: string) {
   return url.endsWith("/") ? url : `${url}/`;
+}
+
+function isLikelyLowMemoryArtifactRuntime() {
+  if (lowMemoryArtifactRuntime !== undefined) {
+    return lowMemoryArtifactRuntime;
+  }
+
+  if (typeof navigator === "undefined") {
+    lowMemoryArtifactRuntime = false;
+    return lowMemoryArtifactRuntime;
+  }
+
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isApplePlatform = /iphone|ipad|ipod|macintosh|mac os x/.test(userAgent);
+  const isWebKit = /applewebkit/.test(userAgent);
+  const isFirefox = /firefox|fxios/.test(userAgent);
+  const isChromium = /chrome|chromium|crios|edgios|edg\//.test(userAgent);
+
+  lowMemoryArtifactRuntime =
+    isApplePlatform && isWebKit && !isFirefox && !isChromium;
+
+  return lowMemoryArtifactRuntime;
+}
+
+function isMemoryHeavyArtifactUrl(url: string) {
+  return new URL(url).pathname.endsWith(".bin");
+}
+
+function getChunkConcurrency(url: string) {
+  if (isLikelyLowMemoryArtifactRuntime() && isMemoryHeavyArtifactUrl(url)) {
+    return LOW_MEMORY_CHUNK_CONCURRENCY;
+  }
+
+  return DEFAULT_CHUNK_CONCURRENCY;
+}
+
+function shouldThrottleTopLevelArtifactRequest(url: string) {
+  return isLikelyLowMemoryArtifactRuntime() && isMemoryHeavyArtifactUrl(url);
+}
+
+function acquireLowMemoryArtifactSlot() {
+  if (
+    activeLowMemoryArtifactRequests < LOW_MEMORY_TOP_LEVEL_ARTIFACT_CONCURRENCY
+  ) {
+    activeLowMemoryArtifactRequests += 1;
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    pendingLowMemoryArtifactRequests.push(() => {
+      activeLowMemoryArtifactRequests += 1;
+      resolve();
+    });
+  });
+}
+
+function releaseLowMemoryArtifactSlot() {
+  activeLowMemoryArtifactRequests = Math.max(
+    0,
+    activeLowMemoryArtifactRequests - 1,
+  );
+
+  pendingLowMemoryArtifactRequests.shift()?.();
+}
+
+async function runWithTopLevelArtifactThrottle<T>(
+  requestUrl: string,
+  task: () => Promise<T>,
+) {
+  if (!shouldThrottleTopLevelArtifactRequest(requestUrl)) {
+    return task();
+  }
+
+  if (!lowMemoryArtifactModeLogged) {
+    console.info(
+      `[WebLLM] Limiting large model artifact downloads to ${LOW_MEMORY_TOP_LEVEL_ARTIFACT_CONCURRENCY} concurrent request and ${LOW_MEMORY_CHUNK_CONCURRENCY} chunk fetches on Safari/WebKit to reduce peak memory.`,
+    );
+    lowMemoryArtifactModeLogged = true;
+  }
+
+  await acquireLowMemoryArtifactSlot();
+
+  try {
+    return await task();
+  } finally {
+    releaseLowMemoryArtifactSlot();
+  }
 }
 
 function shouldHandleArtifactRequest(request: Request) {
@@ -558,7 +651,7 @@ async function downloadArtifactWithResume(
 
   await runWithConcurrency(
     missingRanges,
-    MAX_CHUNK_CONCURRENCY,
+    getChunkConcurrency(request.url),
     async (range) => {
       await downloadArtifactRange(request, originalFetch, meta, range);
       await putArtifactMeta({
@@ -581,7 +674,9 @@ async function fetchArtifactResponse(
     return (await inflightResponse).clone();
   }
 
-  const nextResponse = downloadArtifactWithResume(request, originalFetch);
+  const nextResponse = runWithTopLevelArtifactThrottle(request.url, () =>
+    downloadArtifactWithResume(request, originalFetch),
+  );
   inflightArtifactResponses.set(request.url, nextResponse);
 
   try {
