@@ -70,8 +70,8 @@ const WARMUP_PROMPT = "Reply with exactly OK.";
 // ---------------------------------------------------------------------------
 
 env.allowRemoteModels = true;
-env.allowLocalModels = false;
-env.useBrowserCache = true;
+env.allowLocalModels = true;
+env.useBrowserCache = false;
 env.useWasmCache = false;
 
 // ---------------------------------------------------------------------------
