@@ -1,0 +1,218 @@
+{
+  "config": {
+    "model": "google/gemma-4-E2B-it",
+    "context_window_size": 4096,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_tokens": 96,
+    "do_sample": true,
+    "repetition_penalty": 1.0,
+    "ignore_eos": false
+  },
+  "score": 22,
+  "maxScore": 28,
+  "scorePct": 78.57142857142857,
+  "cases": [
+    {
+      "id": "strict-json-nested",
+      "prompt": "Reply with ONLY this minified JSON, nothing else. No code fences, no prose: {\"name\":\"Alice\",\"tags\":[\"a\",\"b\",\"c\"],\"meta\":{\"active\":true}}",
+      "score": 1,
+      "output": "{\"name\":\"Alice\",\"tags\":[\"a\",\"b\",\"c\"],\"meta\":{\"active\":true}}",
+      "durationMs": 13805.83764000039,
+      "usage": {
+        "prompt_tokens": 46,
+        "completion_tokens": 20,
+        "total_tokens": 66,
+        "generation_seconds": 13.773343564000243
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 4
+    },
+    {
+      "id": "exact-seven-words",
+      "prompt": "Write a sentence about winter in exactly seven words. No more, no less. Reply with only the sentence.",
+      "score": 1,
+      "output": "Cold winds blanket the silent, white world.",
+      "durationMs": 6843.867464000141,
+      "usage": {
+        "prompt_tokens": 31,
+        "completion_tokens": 10,
+        "total_tokens": 41,
+        "generation_seconds": 6.81075268099994
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 3
+    },
+    {
+      "id": "csv-with-header",
+      "prompt": "Output a CSV with the header \"name,age\" and two data rows: \"Alice,30\" and \"Bob,25\". Only the CSV, nothing else. No code fences.",
+      "score": 1,
+      "output": "name,age\nAlice,30\nBob,25",
+      "durationMs": 9936.637230999622,
+      "usage": {
+        "prompt_tokens": 49,
+        "completion_tokens": 14,
+        "total_tokens": 63,
+        "generation_seconds": 9.905163802999596
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 4
+    },
+    {
+      "id": "code-no-fences",
+      "prompt": "Reply with ONLY this JavaScript, nothing else. No markdown, no code fences, no prose:\nfunction add(a,b){return a+b;}",
+      "score": 1,
+      "output": "function add(a,b){return a+b;}",
+      "durationMs": 3165.44636800063,
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 13,
+        "total_tokens": 54,
+        "generation_seconds": 3.135396457000752
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 4
+    },
+    {
+      "id": "arithmetic-multi-step",
+      "prompt": "Alice has 14 apples. She gives 4 to Bob and eats 2. Bob then gives half of his apples to Carol. How many apples does Carol have now? Reply with only the number.",
+      "score": 0,
+      "output": "3",
+      "durationMs": 121.60218200006057,
+      "usage": {
+        "prompt_tokens": 51,
+        "completion_tokens": 2,
+        "total_tokens": 53,
+        "generation_seconds": 0.11728947899973718
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 3
+    },
+    {
+      "id": "reading-comprehension-year",
+      "prompt": "Text: \"Marie moved to Lyon in 2018 and opened a bakery in 2020.\" Question: In what year did Marie open the bakery? Reply with only the year, four digits, nothing else.",
+      "score": 1,
+      "output": "2020",
+      "durationMs": 325.2651130005688,
+      "usage": {
+        "prompt_tokens": 56,
+        "completion_tokens": 5,
+        "total_tokens": 61,
+        "generation_seconds": 0.3212148309994518
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 3
+    },
+    {
+      "id": "instruction-hierarchy-last-wins",
+      "prompt": "First, tell me the capital of Japan. Then, ignore that previous instruction and instead reply with only the word NO in uppercase. Reply with only NO.",
+      "score": 0,
+      "output": "The capital of Japan is Tokyo.\nNO",
+      "durationMs": 640.9788710006978,
+      "usage": {
+        "prompt_tokens": 40,
+        "completion_tokens": 10,
+        "total_tokens": 50,
+        "generation_seconds": 0.6365413200001058
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 3
+    },
+    {
+      "id": "json-extract",
+      "prompt": "Text: \"The event starts at 18:00 on 2026-05-14 in Paris.\" Extract into minified JSON as {\"time\":\"...\",\"date\":\"...\",\"city\":\"...\"}. Reply with only the JSON, no code fences, no prose.",
+      "score": 1,
+      "output": "{\"time\":\"18:00\",\"date\":\"2026-05-14\",\"city\":\"Paris\"}",
+      "durationMs": 1615.752411998983,
+      "usage": {
+        "prompt_tokens": 69,
+        "completion_tokens": 27,
+        "total_tokens": 96,
+        "generation_seconds": 1.6115907809999044
+      },
+      "config": {
+        "model": "google/gemma-4-E2B-it",
+        "context_window_size": 4096,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_tokens": 96,
+        "do_sample": true,
+        "repetition_penalty": 1.0,
+        "ignore_eos": false
+      },
+      "weight": 4
+    }
+  ]
+}
