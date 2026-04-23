@@ -1,96 +1,25 @@
-import { ServiceWorkerMLCEngineHandler } from "@mlc-ai/web-llm";
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
-import { serializeError } from "../utils/error";
-import { installResumableArtifactDownloads } from "../utils/resumable-artifacts";
 
 declare const self: ServiceWorkerGlobalScope;
-const FORNACE_WEBLLM_CHAT_CACHE = "fornace-webllm-chat-cache";
 
-installResumableArtifactDownloads();
+const FORNACE_BROWSER_CACHE = "fornace-browser-keepalive";
 
-class BetterServiceWorkerMLCEngineHandler extends ServiceWorkerMLCEngineHandler {
-  async handleTask<T>(uuid: string, task: () => Promise<T>): Promise<void> {
-    try {
-      const res = await task();
-      const msg = { kind: "return" as const, uuid, content: res as any };
-      this.postMessage(msg);
-    } catch (err: any) {
-      console.error("[ServiceWorker] Task failed:", err);
-      const errStr = serializeError(err, "Unknown service worker error");
-      const msg = { kind: "throw" as const, uuid, content: errStr as any };
-      this.postMessage(msg);
-    }
-  }
-}
-
-let handler: BetterServiceWorkerMLCEngineHandler;
-
-async function checkGPUAvailablity() {
-  if (!("gpu" in navigator)) {
-    console.log("Service Worker: Web-LLM Engine Activated");
-    return false;
-  }
-  const adapter = await navigator.gpu.requestAdapter();
-  if (!adapter) {
-    console.log("Service Worker: Web-LLM Engine Activated");
-    return false;
-  }
-  return true;
-}
-
-self.addEventListener("message", (event) => {
-  if (!handler) {
-    handler = new BetterServiceWorkerMLCEngineHandler();
-    console.log("Service Worker: Web-LLM Engine Activated");
-  }
-
-  const msg = event.data;
-  if (msg.kind === "checkWebGPUAvilability") {
-    console.log("Service Worker: Web-LLM Engine Activated");
-    checkGPUAvailablity().then((gpuAvailable) => {
-      console.log(
-        "Service Worker: WebGPU is " +
-          (gpuAvailable ? "available" : "unavailable"),
-      );
-      const reply = {
-        kind: "return",
-        uuid: msg.uuid,
-        content: gpuAvailable,
-      };
-      event.source?.postMessage(reply);
-    });
-  }
-});
-
-self.addEventListener("install", (event) => {
-  // Always update right away
+self.addEventListener("install", () => {
   self.skipWaiting();
-
-  event.waitUntil(
-    caches.open(FORNACE_WEBLLM_CHAT_CACHE).then((cache) => {
-      return cache.addAll([]);
-    }),
-  );
 });
 
 self.addEventListener("activate", (event) => {
-  if (!handler) {
-    handler = new BetterServiceWorkerMLCEngineHandler();
-    console.log("Service Worker: Web-LLM Engine Activated");
-  }
+  event.waitUntil(self.clients.claim());
 });
 
-// This declares the value of `injectionPoint` to TypeScript.
-// `injectionPoint` is the string that will be replaced by the
-// actual precache manifest. By default, this string is set to
-// `"self.__SW_MANIFEST"`.
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
   }
 }
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -102,11 +31,11 @@ const serwist = new Serwist({
       matcher: ({ sameOrigin, url: { pathname } }) =>
         sameOrigin && pathname === "/ping.txt",
       handler: new CacheFirst({
-        cacheName: "WebLLMChatServiceWorkerKeepAlive",
+        cacheName: FORNACE_BROWSER_CACHE,
         plugins: [
           new ExpirationPlugin({
             maxEntries: 1,
-            maxAgeSeconds: 365 * 24 * 60 * 60, // 365 days
+            maxAgeSeconds: 365 * 24 * 60 * 60,
             maxAgeFrom: "last-used",
           }),
         ],

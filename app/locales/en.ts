@@ -138,8 +138,8 @@ const en = {
         preparingRuntime: "Prepare runtime",
         requestingGpu: "Connect to WebGPU",
         fetchingModelFiles: "Get model files",
-        loadingModel: "Load into GPU",
-        compilingShaders: "Compile GPU shaders",
+        loadingModel: "Open model graph",
+        warmingUp: "Warm up runtime",
         finalizing: "Finalize startup",
         ready: "Ready",
       },
@@ -147,13 +147,15 @@ const en = {
         checkingCache:
           "Checking browser storage for an existing model before startup continues.",
         preparingRuntime:
-          "Preparing the runtime files and model configuration needed to launch.",
+          "Preparing tokenizer files, model metadata, and runtime state.",
         requestingGpu:
           "Connecting to a compatible WebGPU device on this machine.",
         fetchingModelFiles:
           "Fetching or reusing the model files required for offline use.",
-        loadingModel: "Loading model weights from storage into GPU memory.",
-        compilingShaders: "Compiling the GPU programs needed for inference.",
+        loadingModel:
+          "Opening the ONNX graph and creating the inference sessions.",
+        warmingUp:
+          "Running a short warmup pass so the first reply starts faster.",
         finalizing: "Completing the last startup steps before chat unlocks.",
         ready: "Startup complete.",
       },
@@ -260,7 +262,7 @@ const en = {
     Model: "Model",
     ModelClientType: {
       Title: "Model Type",
-      WebLlm: "WebLLM Models",
+      WebLlm: "Transformers.js (Local Browser)",
       MlcLlm: "MLC-LLM REST API (Advanced)",
     },
 
@@ -273,20 +275,34 @@ const en = {
       },
     },
     ContextWindowLength: {
-      Title: "Context Window Length",
-      SubTitle: "The maximum number of tokens for the context window",
+      Title: "Prompt Context Limit",
+      SubTitle:
+        "Maximum prompt length to keep before older tokens are truncated. You can request up to the model's declared 128K maximum, but our long-prompt browser tests failed well below that.",
     },
     Temperature: {
       Title: "Temperature",
-      SubTitle: "A larger value makes the more random output",
+      SubTitle: "Higher values increase randomness and output variance",
     },
     TopP: {
       Title: "Top P",
-      SubTitle: "Do not alter this value together with temperature",
+      SubTitle: "Limits sampling to the most likely tokens; 1.0 disables it",
+    },
+    TopK: {
+      Title: "Top K",
+      SubTitle: "Keeps only the top K candidate tokens before sampling",
     },
     MaxTokens: {
       Title: "Max Tokens",
-      SubTitle: "Maximum length of input tokens and generated tokens",
+      SubTitle: "Maximum number of new tokens to generate for each reply",
+    },
+    Stream: {
+      Title: "Streaming Replies",
+      SubTitle: "Show tokens as they arrive; disable for batch-style testing",
+    },
+    DoSample: {
+      Title: "Enable Sampling",
+      SubTitle:
+        "Use probabilistic sampling instead of greedy decoding; Gemma 4 generally expects this on",
     },
     PresencePenalty: {
       Title: "Presence Penalty",
@@ -298,6 +314,29 @@ const en = {
       SubTitle:
         "A larger value decreasing the likelihood to repeat the same line",
     },
+    RepetitionPenalty: {
+      Title: "Repetition Penalty",
+      SubTitle: "Values above 1 discourage loops and repeated phrasing",
+    },
+    Seed: {
+      Title: "Seed",
+      SubTitle:
+        "Leave blank for random sampling, or set an integer to repeat runs",
+    },
+    IgnoreEos: {
+      Title: "Ignore EOS",
+      SubTitle:
+        "Continue generation past the model stop token until max tokens; useful mainly for debugging",
+    },
+    Gemma4Presets: {
+      Title: "Gemma 4 Presets",
+      SubTitle:
+        "Stable follows the official Gemma 4 sampling recipe, Peak is slightly hotter, and Bench keeps replies shorter for quick local sweeps.",
+      Peak: "Peak",
+      Stable: "Stable",
+      Bench: "Bench",
+      Applied: (name: string) => `Applied Gemma 4 ${name} preset`,
+    },
     CacheType: {
       Title: "Cache Type",
       SubTitle: "Use IndexDB or Cache API to store model weights",
@@ -308,7 +347,8 @@ const en = {
     },
     EnableThinking: {
       Title: "Enable Thinking",
-      SubTitle: "Allow reasoning models to think step-by-step",
+      SubTitle:
+        "Enable Gemma 4 reasoning mode through the official chat template. Prior assistant thoughts are stripped from later turns.",
     },
   },
   Store: {
@@ -428,7 +468,7 @@ const en = {
 
   ServiceWorker: {
     Error:
-      "The WebLLM worker has lost connection. Please close all tabs of Fornace WebLLM Chat and try opening Fornace WebLLM Chat again.",
+      "The local model worker is unavailable. Reload the page and try again.",
   },
   MlcLLMConnect: {
     Title: "Connect to MLC-LLM API Endpoint",

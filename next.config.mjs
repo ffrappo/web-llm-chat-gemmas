@@ -8,8 +8,8 @@ console.log("[Next] build with chunk: ", !disableChunk);
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    worker-src 'self';
+    script-src 'self' blob: https://cdn.jsdelivr.net 'unsafe-eval' 'unsafe-inline';
+    worker-src 'self' blob: https://cdn.jsdelivr.net;
     connect-src 'self' blob: data: https: http:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
@@ -28,6 +28,12 @@ const nextConfig = {
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
+
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      sharp$: false,
+      "onnxruntime-node$": false,
+    };
 
     config.resolve.fallback = {
       child_process: false,

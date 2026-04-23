@@ -1,4 +1,4 @@
-import { trimTopic, getMessageTextContent } from "../utils";
+import { fixMessage, trimTopic, getMessageTextContent } from "../utils";
 
 import log from "loglevel";
 import Locale, { getLang } from "../locales";
@@ -10,12 +10,18 @@ import {
   DEFAULT_MODELS,
   DEFAULT_SYSTEM_TEMPLATE,
   StoreKey,
+  getModelRuntime,
 } from "../constant";
-import { RequestMessage, MultimodalContent, LLMApi } from "../client/api";
+import {
+  RequestMessage,
+  MultimodalContent,
+  LLMApi,
+  ChatCompletionFinishReason,
+  CompletionUsage,
+} from "../client/api";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
-import { ChatCompletionFinishReason, CompletionUsage } from "@mlc-ai/web-llm";
 import { ChatImage } from "../typing";
 
 export type ChatMessage = RequestMessage & {
@@ -95,6 +101,16 @@ function countMessages(msgs: ChatMessage[]) {
     (pre, cur) => pre + estimateTokenLength(getMessageTextContent(cur)),
     0,
   );
+}
+
+function getHistoryTokenBudget(modelConfig: ModelConfig) {
+  const runtimeMaxContext = getModelRuntime(
+    modelConfig.model,
+  )?.max_context_window;
+  const contextWindow =
+    modelConfig.context_window_size ?? runtimeMaxContext ?? 4096;
+  const maxNewTokens = Math.max(1, modelConfig.max_tokens ?? 1024);
+  return Math.max(256, contextWindow - maxNewTokens);
 }
 
 function fillTemplateWith(input: string, modelConfig: ConfigType) {
@@ -351,13 +367,14 @@ export const useChatStore = createPersistStore(
           config: {
             ...modelConfig,
             cache: useAppConfig.getState().cacheType,
-            stream: true,
+            stream: modelConfig.stream ?? true,
             enable_thinking: useAppConfig.getState().enableThinking,
           },
           onUpdate(message) {
             botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
+            const visibleMessage = fixMessage(message);
+            if (visibleMessage) {
+              botMessage.content = visibleMessage;
             }
             get().updateCurrentSession((session) => {
               session.messages = session.messages.concat();
@@ -368,6 +385,7 @@ export const useChatStore = createPersistStore(
             botMessage.usage = usage;
             botMessage.stopReason = stopReason;
             if (message) {
+              message = fixMessage(message);
               if (!this.config.enable_thinking) {
                 message = message.replace(/<think>\s*<\/think>/g, "");
               }
@@ -393,7 +411,9 @@ export const useChatStore = createPersistStore(
               }
             }
             const isAborted = errorMessage?.includes("aborted");
-            botMessage.content += "\n\n" + errorMessage;
+            if (!isAborted) {
+              botMessage.content += "\n\n" + errorMessage;
+            }
             botMessage.streaming = false;
             userMessage.isError = !isAborted;
             botMessage.isError = !isAborted;
@@ -481,7 +501,7 @@ export const useChatStore = createPersistStore(
           : shortTermMemoryStartIndex;
         // and if user has cleared history messages, we should exclude the memory too.
         const contextStartIndex = Math.max(clearContextIndex, memoryStartIndex);
-        const maxTokenThreshold = modelConfig.max_tokens;
+        const maxTokenThreshold = getHistoryTokenBudget(modelConfig);
 
         // get recent messages as much as possible
         const reversedRecentMessages = [];
@@ -573,7 +593,7 @@ export const useChatStore = createPersistStore(
 
         const historyMsgLength = countMessages(toBeSummarizedMsgs);
 
-        if (historyMsgLength > (modelConfig?.max_tokens ?? 4000)) {
+        if (historyMsgLength > getHistoryTokenBudget(modelConfig)) {
           const n = toBeSummarizedMsgs.length;
           toBeSummarizedMsgs = toBeSummarizedMsgs.slice(
             Math.max(0, n - config.historyMessageCount),

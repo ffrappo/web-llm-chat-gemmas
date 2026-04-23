@@ -1,4 +1,3 @@
-import { prebuiltAppConfig } from "@mlc-ai/web-llm";
 import { ModelRecord } from "./client/api";
 
 export const OWNER = "fornacestudio";
@@ -82,8 +81,7 @@ const qwen3_common_configs = {
   display_name: "Qwen",
   provider: "Alibaba",
   family: ModelFamily.QWEN,
-  // Recommended config is for non-thinking mode
-  // For thinking mode, see webllm.ts where temperature=0.6 and top_p=0.95 are applied
+  // Recommended config is for non-thinking mode.
   recommended_config: {
     temperature: 0.7,
     presence_penalty: 0,
@@ -92,37 +90,83 @@ const qwen3_common_configs = {
   },
 };
 
-const GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
-const GEMMA4_MODEL_REPO =
-  "https://huggingface.co/welcoma/gemma-4-E2B-it-q4f16_1-MLC";
+export const LEGACY_GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
+export const PINNED_WEBLLM_GEMMA4_MODEL_ID =
+  "gemma-4-E2B-it-q4f16_1-MLC-r387f4e9";
+export const PREVIOUS_GEMMA4_MODEL_ID = "gemma-4-E2B-it-ONNX-onnx-r5f09dcf";
+export const GEMMA4_MODEL_REPO = "onnx-community/gemma-4-E2B-it-ONNX";
+export const GEMMA4_MODEL_WEIGHTS_REVISION =
+  "5f09dcfb04eddbc9d8e2ebd8a0bf5250d048c79e";
+export const GEMMA4_MODEL_REVISION = "ee1a73e8f4cb9aab6c7165231bf7e8e6331051cc";
+export const GEMMA4_MODEL_CACHE_VERSION = "onnx-ree1a73e";
+export const GEMMA4_MODEL_ID = `gemma-4-E2B-it-ONNX-${GEMMA4_MODEL_CACHE_VERSION}`;
 export const DEFAULT_MODEL_ID = GEMMA4_MODEL_ID;
+export const LEGACY_DEFAULT_MODEL = LEGACY_GEMMA4_MODEL_ID;
 
-const GEMMA4_WEBLLM_MODEL_LIST = [
-  {
-    // Official WebLLM builds do not yet ship Gemma 4, so this app uses the
-    // maintained upstream custom MLC/WebLLM-compatible artifact.
-    model: GEMMA4_MODEL_REPO,
-    model_id: GEMMA4_MODEL_ID,
-    model_lib: `${GEMMA4_MODEL_REPO}/resolve/main/libs/${GEMMA4_MODEL_ID}-webgpu.wasm`,
-    required_features: ["shader-f16"],
-    overrides: {
-      context_window_size: 4096,
-      sliding_window_size: -1,
-    },
-  },
-] as typeof prebuiltAppConfig.model_list;
+const GEMMA4_PRESET_BASE = {
+  context_window_size: 16384,
+  max_tokens: 4000,
+  top_k: 64,
+  do_sample: true,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  stream: true,
+  ignore_eos: false,
+} as const;
 
-const WEBLLM_MODEL_LIST = [
-  ...prebuiltAppConfig.model_list.filter(
-    (model) => model.model_id !== GEMMA4_MODEL_ID,
-  ),
-  ...GEMMA4_WEBLLM_MODEL_LIST,
-];
+export const GEMMA4_PEAK_PRESET = {
+  ...GEMMA4_PRESET_BASE,
+  temperature: 1.1,
+  top_p: 0.98,
+  top_k: 96,
+  repetition_penalty: 1.02,
+} as const;
 
-export const WEBLLM_APP_CONFIG: typeof prebuiltAppConfig = {
-  ...prebuiltAppConfig,
-  model_list: WEBLLM_MODEL_LIST,
+export const GEMMA4_STABLE_PRESET = {
+  ...GEMMA4_PRESET_BASE,
+  temperature: 1.0,
+  top_p: 0.95,
+  top_k: 64,
+  repetition_penalty: 1.05,
+} as const;
+
+export const GEMMA4_BENCH_PRESET = {
+  ...GEMMA4_STABLE_PRESET,
+  context_window_size: 4096,
+  max_tokens: 256,
+} as const;
+
+const MODEL_ID_MIGRATIONS: Readonly<Record<string, string>> = {
+  [LEGACY_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
+  [PINNED_WEBLLM_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
+  [PREVIOUS_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
 };
+
+export function resolveCurrentModelId(modelId?: string | null) {
+  if (!modelId) {
+    return DEFAULT_MODEL_ID;
+  }
+
+  return MODEL_ID_MIGRATIONS[modelId] ?? modelId;
+}
+
+const MODEL_RUNTIME = {
+  [GEMMA4_MODEL_ID]: {
+    repo: GEMMA4_MODEL_REPO,
+    revision: GEMMA4_MODEL_WEIGHTS_REVISION,
+    processor_revision: GEMMA4_MODEL_REVISION,
+    device: "webgpu",
+    dtype: "q4f16",
+    supports_images: true,
+    supports_audio: true,
+    max_context_window: 131072,
+  },
+} as const;
+
+export function getModelRuntime(modelId?: string | null) {
+  const currentModelId = resolveCurrentModelId(modelId);
+  return MODEL_RUNTIME[currentModelId as keyof typeof MODEL_RUNTIME];
+}
 
 const DEFAULT_MODEL_BASES: ModelRecord[] = [
   // Phi-3.5 Vision
@@ -956,13 +1000,14 @@ const DEFAULT_MODEL_BASES: ModelRecord[] = [
     display_name: "Gemma 4",
     provider: "Google",
     family: ModelFamily.GEMMA,
-    recommended_config: {
-      temperature: 0.7,
-      context_window_size: 4096,
-      presence_penalty: 0,
-      frequency_penalty: 1,
-      top_p: 0.95,
-    },
+    hf_model_id: GEMMA4_MODEL_REPO,
+    hf_revision: GEMMA4_MODEL_REVISION,
+    preferred_device: "webgpu",
+    preferred_dtype: "q4f16",
+    supports_images: true,
+    supports_audio: true,
+    max_context_window: 131072,
+    recommended_config: GEMMA4_STABLE_PRESET,
   },
   // Gemma 2
   {
@@ -1578,9 +1623,7 @@ const DEFAULT_MODEL_BASES: ModelRecord[] = [
   },
 ];
 
-const ENABLED_MODEL_IDS = new Set(
-  WEBLLM_APP_CONFIG.model_list.map((model) => model.model_id),
-);
+const ENABLED_MODEL_IDS = new Set(Object.keys(MODEL_RUNTIME));
 
 function getModelSize(model_id: string): string | undefined {
   const sizeRegex = /-((?:E)?\d+(?:\.\d+)?[BK])-?/i;
@@ -1601,9 +1644,6 @@ const AVAILABLE_DEFAULT_MODELS: ModelRecord[] = DEFAULT_MODEL_BASES.filter(
   size: getModelSize(model.name),
   quantization: getModelQuantization(model.name),
 }));
-
-export const LEGACY_DEFAULT_MODEL =
-  AVAILABLE_DEFAULT_MODELS[0]?.name ?? DEFAULT_MODEL_ID;
 
 export const DEFAULT_MODELS: ModelRecord[] = [
   ...AVAILABLE_DEFAULT_MODELS.filter(

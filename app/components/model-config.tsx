@@ -5,6 +5,11 @@ import {
   ModelClient,
   Model,
 } from "../store";
+import {
+  GEMMA4_BENCH_PRESET,
+  GEMMA4_PEAK_PRESET,
+  GEMMA4_STABLE_PRESET,
+} from "../constant";
 
 import CancelIcon from "../icons/cancel.svg";
 import ConfirmIcon from "../icons/confirm.svg";
@@ -31,6 +36,24 @@ export function ModelConfigList() {
     const modelConfig = { ...config.modelConfig } as ModelConfig;
     updater(modelConfig);
     config.update((config) => (config.modelConfig = modelConfig));
+  };
+
+  const isGemma4Model = config.modelConfig.model
+    .toLowerCase()
+    .startsWith("gemma-4");
+  const supportsThinking =
+    config.modelConfig.model.toLowerCase().startsWith("qwen3") || isGemma4Model;
+
+  const applyGemma4Preset = (name: string, preset: Partial<ModelConfig>) => {
+    config.update((config) => {
+      config.enableThinking = false;
+      config.modelConfig = {
+        ...config.modelConfig,
+        ...preset,
+        seed: null,
+      };
+    });
+    showToast(Locale.Settings.Gemma4Presets.Applied(name));
   };
 
   return (
@@ -83,7 +106,55 @@ export function ModelConfigList() {
             </Select>
           </ListItem>
 
-          {config.modelConfig.model.toLowerCase().startsWith("qwen3") && (
+          {isGemma4Model && (
+            <ListItem
+              title={Locale.Settings.Gemma4Presets.Title}
+              subTitle={Locale.Settings.Gemma4Presets.SubTitle}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginTop: 12,
+                }}
+              >
+                <IconButton
+                  bordered
+                  text={Locale.Settings.Gemma4Presets.Peak}
+                  onClick={() =>
+                    applyGemma4Preset(
+                      Locale.Settings.Gemma4Presets.Peak,
+                      GEMMA4_PEAK_PRESET,
+                    )
+                  }
+                />
+                <IconButton
+                  bordered
+                  type="primary"
+                  text={Locale.Settings.Gemma4Presets.Stable}
+                  onClick={() =>
+                    applyGemma4Preset(
+                      Locale.Settings.Gemma4Presets.Stable,
+                      GEMMA4_STABLE_PRESET,
+                    )
+                  }
+                />
+                <IconButton
+                  bordered
+                  text={Locale.Settings.Gemma4Presets.Bench}
+                  onClick={() =>
+                    applyGemma4Preset(
+                      Locale.Settings.Gemma4Presets.Bench,
+                      GEMMA4_BENCH_PRESET,
+                    )
+                  }
+                />
+              </div>
+            </ListItem>
+          )}
+
+          {supportsThinking && (
             <ListItem
               title={Locale.Settings.EnableThinking.Title}
               subTitle={Locale.Settings.EnableThinking.SubTitle}
@@ -125,6 +196,7 @@ export function ModelConfigList() {
               <option value="16384">16K</option>
               <option value="32768">32K</option>
               <option value="65536">64K</option>
+              <option value="100000">100K</option>
               <option value="131072">128K</option>
             </Select>
           </ListItem>
@@ -134,10 +206,10 @@ export function ModelConfigList() {
             subTitle={Locale.Settings.Temperature.SubTitle}
           >
             <InputRange
-              value={config.modelConfig.temperature?.toFixed(1)}
+              value={config.modelConfig.temperature?.toFixed(2)}
               min="0"
-              max="1" // let's limit it to 0-1
-              step="0.1"
+              max="2"
+              step="0.05"
               onChange={(e) => {
                 updateModelConfig(
                   (config) =>
@@ -153,10 +225,10 @@ export function ModelConfigList() {
             subTitle={Locale.Settings.TopP.SubTitle}
           >
             <InputRange
-              value={(config.modelConfig.top_p ?? 1).toFixed(1)}
+              value={(config.modelConfig.top_p ?? 1).toFixed(2)}
               min="0"
               max="1"
-              step="0.1"
+              step="0.05"
               onChange={(e) => {
                 updateModelConfig(
                   (config) =>
@@ -166,6 +238,26 @@ export function ModelConfigList() {
                 );
               }}
             ></InputRange>
+          </ListItem>
+          <ListItem
+            title={Locale.Settings.TopK.Title}
+            subTitle={Locale.Settings.TopK.SubTitle}
+          >
+            <input
+              type="number"
+              min={0}
+              max={512}
+              step={1}
+              value={config.modelConfig.top_k ?? 64}
+              onChange={(e) => {
+                updateModelConfig(
+                  (config) =>
+                    (config.top_k = ModalConfigValidator.top_k(
+                      e.currentTarget.valueAsNumber,
+                    )),
+                );
+              }}
+            ></input>
           </ListItem>
           <ListItem
             title={Locale.Settings.MaxTokens.Title}
@@ -186,20 +278,21 @@ export function ModelConfigList() {
               }
             ></input>
           </ListItem>
+
           <ListItem
-            title={Locale.Settings.PresencePenalty.Title}
-            subTitle={Locale.Settings.PresencePenalty.SubTitle}
+            title={Locale.Settings.RepetitionPenalty.Title}
+            subTitle={Locale.Settings.RepetitionPenalty.SubTitle}
           >
             <InputRange
-              value={config.modelConfig.presence_penalty?.toFixed(1)}
-              min="-2"
-              max="2"
-              step="0.1"
+              value={config.modelConfig.repetition_penalty?.toFixed(2)}
+              min="0.5"
+              max="1.5"
+              step="0.01"
               onChange={(e) => {
                 updateModelConfig(
                   (config) =>
-                    (config.presence_penalty =
-                      ModalConfigValidator.presence_penalty(
+                    (config.repetition_penalty =
+                      ModalConfigValidator.repetition_penalty(
                         e.currentTarget.valueAsNumber,
                       )),
                 );
@@ -208,24 +301,72 @@ export function ModelConfigList() {
           </ListItem>
 
           <ListItem
-            title={Locale.Settings.FrequencyPenalty.Title}
-            subTitle={Locale.Settings.FrequencyPenalty.SubTitle}
+            title={Locale.Settings.Seed.Title}
+            subTitle={Locale.Settings.Seed.SubTitle}
           >
-            <InputRange
-              value={config.modelConfig.frequency_penalty?.toFixed(1)}
-              min="-2"
-              max="2"
-              step="0.1"
+            <input
+              type="number"
+              step={1}
+              value={config.modelConfig.seed ?? ""}
+              placeholder={Locale.Settings.Seed.Title}
               onChange={(e) => {
+                const nextValue = e.currentTarget.value;
                 updateModelConfig(
                   (config) =>
-                    (config.frequency_penalty =
-                      ModalConfigValidator.frequency_penalty(
-                        e.currentTarget.valueAsNumber,
-                      )),
+                    (config.seed =
+                      nextValue.trim().length === 0
+                        ? null
+                        : ModalConfigValidator.seed(
+                            e.currentTarget.valueAsNumber,
+                          )),
                 );
               }}
-            ></InputRange>
+            ></input>
+          </ListItem>
+
+          <ListItem
+            title={Locale.Settings.DoSample.Title}
+            subTitle={Locale.Settings.DoSample.SubTitle}
+          >
+            <input
+              type="checkbox"
+              checked={config.modelConfig.do_sample}
+              onChange={(e) => {
+                updateModelConfig(
+                  (config) => (config.do_sample = e.currentTarget.checked),
+                );
+              }}
+            ></input>
+          </ListItem>
+
+          <ListItem
+            title={Locale.Settings.IgnoreEos.Title}
+            subTitle={Locale.Settings.IgnoreEos.SubTitle}
+          >
+            <input
+              type="checkbox"
+              checked={config.modelConfig.ignore_eos}
+              onChange={(e) => {
+                updateModelConfig(
+                  (config) => (config.ignore_eos = e.currentTarget.checked),
+                );
+              }}
+            ></input>
+          </ListItem>
+
+          <ListItem
+            title={Locale.Settings.Stream.Title}
+            subTitle={Locale.Settings.Stream.SubTitle}
+          >
+            <input
+              type="checkbox"
+              checked={config.modelConfig.stream}
+              onChange={(e) => {
+                updateModelConfig(
+                  (config) => (config.stream = e.currentTarget.checked),
+                );
+              }}
+            ></input>
           </ListItem>
         </>
       )}

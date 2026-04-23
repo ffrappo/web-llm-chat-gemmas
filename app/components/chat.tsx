@@ -538,7 +538,8 @@ export function ChatActions(props: {
           });
         }}
       />
-      {config.modelConfig.model.toLowerCase().startsWith("qwen3") && (
+      {(config.modelConfig.model.toLowerCase().startsWith("qwen3") ||
+        config.modelConfig.model.toLowerCase().startsWith("gemma-4")) && (
         <ChatAction
           onClick={() =>
             config.update(
@@ -1118,14 +1119,22 @@ function ChatInner() {
                 const params = new URLSearchParams({
                   model: config.modelConfig.model,
                   temperature: config.modelConfig.temperature.toString(),
+                  context_window_size:
+                    config.modelConfig.context_window_size?.toString() ??
+                    "4096",
                   top_p: config.modelConfig.top_p.toString(),
+                  top_k: config.modelConfig.top_k.toString(),
                   max_tokens: config.modelConfig.max_tokens.toString(),
-                  presence_penalty:
-                    config.modelConfig.presence_penalty.toString(),
-                  frequency_penalty:
-                    config.modelConfig.frequency_penalty.toString(),
+                  stream: config.modelConfig.stream.toString(),
+                  do_sample: config.modelConfig.do_sample.toString(),
+                  repetition_penalty:
+                    config.modelConfig.repetition_penalty.toString(),
+                  enable_thinking: config.enableThinking.toString(),
                   // template: chatStore.currentSession().template;
                 });
+                if (config.modelConfig.seed !== null) {
+                  params.set("seed", config.modelConfig.seed.toString());
+                }
                 const shareUrl = new URL(
                   `${window.location.origin}${window.location.pathname}?${params}`,
                 );
@@ -1363,20 +1372,25 @@ function ChatInner() {
                     )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
-                    {message.role === "assistant" && message.usage && (
-                      <>
-                        <div>
-                          {`Prefill: ${message.usage.extra.prefill_tokens_per_s.toFixed(
-                            1,
-                          )} tok/s,`}
-                        </div>
-                        <div>
-                          {`Decode: ${message.usage.extra.decode_tokens_per_s.toFixed(
-                            1,
-                          )} tok/s,`}
-                        </div>
-                      </>
-                    )}
+                    {message.role === "assistant" &&
+                      message.usage &&
+                      typeof message.usage.extra?.prefill_tokens_per_s ===
+                        "number" &&
+                      typeof message.usage.extra?.decode_tokens_per_s ===
+                        "number" && (
+                        <>
+                          <div>
+                            {`Prefill: ${message.usage.extra.prefill_tokens_per_s.toFixed(
+                              1,
+                            )} tok/s,`}
+                          </div>
+                          <div>
+                            {`Decode: ${message.usage.extra.decode_tokens_per_s.toFixed(
+                              1,
+                            )} tok/s,`}
+                          </div>
+                        </>
+                      )}
                     <div>
                       {isContext
                         ? Locale.Chat.IsContext

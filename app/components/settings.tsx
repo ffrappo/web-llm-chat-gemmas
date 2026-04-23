@@ -13,13 +13,7 @@ import { Input, List, ListItem, Modal, Select, showConfirm } from "./ui-lib";
 import { ModelConfigList } from "./model-config";
 
 import { IconButton } from "./button";
-import {
-  SubmitKey,
-  useChatStore,
-  Theme,
-  useAppConfig,
-  CacheType,
-} from "../store";
+import { SubmitKey, useChatStore, Theme, useAppConfig } from "../store";
 
 import Locale, {
   AllLangs,
@@ -34,8 +28,8 @@ import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
 import { useNavigate } from "react-router-dom";
 import { nanoid } from "nanoid";
-import { LogLevel } from "@mlc-ai/web-llm";
 import { WebLLMContext } from "../context";
+import { LogLevel } from "../client/api";
 
 function EditPromptModal(props: { id: string; onClose: () => void }) {
   const promptStore = usePromptStore();
@@ -516,28 +510,6 @@ export function Settings() {
 
         <List id={SlotID.CustomModel}>
           <ListItem
-            title={Locale.Settings.CacheType.Title}
-            subTitle={Locale.Settings.CacheType.SubTitle}
-          >
-            <Select
-              value="cache"
-              onChange={(e) => {
-                updateConfig(
-                  (config) =>
-                    (config.cacheType = e.currentTarget
-                      .value as any as CacheType),
-                );
-              }}
-            >
-              <option value="cache" key="cache">
-                Cache
-              </option>
-              <option value="index_db" key="index_db">
-                Index DB
-              </option>
-            </Select>
-          </ListItem>
-          <ListItem
             title={Locale.Settings.LogLevel.Title}
             subTitle={Locale.Settings.LogLevel.SubTitle}
           >
@@ -552,7 +524,7 @@ export function Settings() {
                   ([_, value]) => value === parseInt(e.target.value),
                 )?.[0] as LogLevel;
 
-                webllm?.webllm.engine.setLogLevel(logLevel);
+                webllm?.setLogLevel(logLevel).catch(() => undefined);
                 log.setLevel(logLevel);
                 updateConfig((config) => (config.logLevel = logLevel));
               }}

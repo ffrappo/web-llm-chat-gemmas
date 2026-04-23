@@ -13,7 +13,6 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
-import { ServiceWorkerMLCEngine } from "@mlc-ai/web-llm";
 
 import MlcIcon from "../icons/mlc.svg";
 import LoadingIcon from "../icons/three-dots.svg";
@@ -137,7 +136,7 @@ const BOOTSTRAP_PHASES: Exclude<WebLLMPreloadPhase, "ready">[] = [
   "requestingGpu",
   "fetchingModelFiles",
   "loadingModel",
-  "compilingShaders",
+  "warmingUp",
   "finalizing",
 ];
 
@@ -320,140 +319,18 @@ function Screen() {
 }
 
 const useWebLLM = () => {
-  const config = useAppConfig();
   const [webllm, setWebLLM] = useState<WebLLMApi | undefined>(undefined);
-  const [isWebllmActive, setWebllmAlive] = useState(false);
-  const isWebllmInitialized = useRef(false);
-
-  // Initialize WebLLM engine
   useEffect(() => {
-    let isCancelled = false;
-    let timeoutId: number | undefined;
-    let sendEventIntervalId: number | undefined;
-    let webGPUCheckCallback: ((event: MessageEvent) => void) | undefined;
-
-    const cleanupWebGPUCheck = () => {
-      if (sendEventIntervalId !== undefined) {
-        window.clearInterval(sendEventIntervalId);
-        sendEventIntervalId = undefined;
-      }
-
-      if (webGPUCheckCallback && "serviceWorker" in navigator) {
-        navigator.serviceWorker.removeEventListener(
-          "message",
-          webGPUCheckCallback,
-        );
-        webGPUCheckCallback = undefined;
-      }
-    };
-
-    const activateWebLLM = (type: "serviceWorker" | "webWorker") => {
-      if (isCancelled || isWebllmInitialized.current) {
-        return;
-      }
-
-      isWebllmInitialized.current = true;
-      cleanupWebGPUCheck();
-
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-        timeoutId = undefined;
-      }
-
-      setWebLLM(new WebLLMApi(type, config.logLevel));
-      setWebllmAlive(true);
-    };
-
-    // If service worker registration times out, fall back to the web worker.
-    timeoutId = window.setTimeout(() => {
-      if (isWebllmInitialized.current) {
-        return;
-      }
-
-      log.info(
-        "Service Worker activation is timed out. Falling back to use web worker.",
-      );
-      activateWebLLM("webWorker");
-    }, 2_000);
-
-    if ("serviceWorker" in navigator) {
-      log.info("Service Worker API is available and in use.");
-      navigator.serviceWorker.ready
-        .then(() => {
-          if (isCancelled || isWebllmInitialized.current) {
-            return;
-          }
-
-          log.info("Service Worker is activated.");
-          // Check whether WebGPU is available in Service Worker.
-          const request = {
-            kind: "checkWebGPUAvilability",
-            uuid: crypto.randomUUID(),
-            content: "",
-          };
-
-          sendEventIntervalId = window.setInterval(() => {
-            navigator.serviceWorker.controller?.postMessage(request);
-          }, 200);
-
-          webGPUCheckCallback = (event: MessageEvent) => {
-            const message = event.data;
-            if (message.kind === "return" && message.uuid === request.uuid) {
-              const isWebGPUAvailable = message.content;
-              log.info(
-                isWebGPUAvailable
-                  ? "Service Worker has WebGPU Available."
-                  : "Service Worker does not have available WebGPU.",
-              );
-              activateWebLLM(isWebGPUAvailable ? "serviceWorker" : "webWorker");
-            }
-          };
-
-          navigator.serviceWorker.addEventListener(
-            "message",
-            webGPUCheckCallback,
-          );
-        })
-        .catch((err) => {
-          log.warn(
-            "Service Worker readiness check failed. Falling back to use web worker.",
-            err,
-          );
-          activateWebLLM("webWorker");
-        });
-    } else {
-      log.info(
-        "Service Worker API is unavailable. Falling back to use web worker.",
-      );
-      activateWebLLM("webWorker");
-    }
+    log.info("Starting browser LLM worker.");
+    const api = new WebLLMApi("webWorker");
+    setWebLLM(api);
 
     return () => {
-      isCancelled = true;
-      cleanupWebGPUCheck();
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
+      api.abort().catch(() => undefined);
     };
   }, []);
 
-  useEffect(() => {
-    if (webllm?.webllm.type !== "serviceWorker") {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      // 10s per heartbeat, dead after 30 seconds of inactivity.
-      setWebllmAlive(
-        !!webllm.webllm.engine &&
-          (webllm.webllm.engine as ServiceWorkerMLCEngine).missedHeartbeat < 3,
-      );
-    }, 10_000);
-
-    return () => window.clearInterval(intervalId);
-  }, [webllm]);
-
-  return { webllm, isWebllmActive };
+  return { webllm, isWebllmActive: true };
 };
 
 const useMlcLLM = () => {
@@ -472,14 +349,23 @@ const useLoadUrlParam = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const thinkingParam = params.get("enable_thinking");
     let modelConfig: any = {
       model: params.get("model"),
       temperature: params.has("temperature")
         ? parseFloat(params.get("temperature")!)
         : null,
+      context_window_size: params.has("context_window_size")
+        ? parseInt(params.get("context_window_size")!)
+        : null,
       top_p: params.has("top_p") ? parseFloat(params.get("top_p")!) : null,
+      top_k: params.has("top_k") ? parseInt(params.get("top_k")!) : null,
       max_tokens: params.has("max_tokens")
         ? parseInt(params.get("max_tokens")!)
+        : null,
+      stream: params.has("stream") ? params.get("stream") !== "false" : null,
+      do_sample: params.has("do_sample")
+        ? params.get("do_sample") !== "false"
         : null,
       presence_penalty: params.has("presence_penalty")
         ? parseFloat(params.get("presence_penalty")!)
@@ -487,6 +373,13 @@ const useLoadUrlParam = () => {
       frequency_penalty: params.has("frequency_penalty")
         ? parseFloat(params.get("frequency_penalty")!)
         : null,
+      repetition_penalty: params.has("repetition_penalty")
+        ? parseFloat(params.get("repetition_penalty")!)
+        : null,
+      ignore_eos: params.has("ignore_eos")
+        ? params.get("ignore_eos") === "true"
+        : null,
+      seed: params.has("seed") ? parseInt(params.get("seed")!) : null,
     };
     Object.keys(modelConfig).forEach((key) => {
       // If the value of the key is null, delete the key
@@ -497,6 +390,11 @@ const useLoadUrlParam = () => {
     if (Object.keys(modelConfig).length > 0) {
       log.info("Loaded model config from URL params", modelConfig);
       config.updateModelConfig(modelConfig);
+    }
+    if (thinkingParam !== null) {
+      config.update(
+        (config) => (config.enableThinking = thinkingParam === "true"),
+      );
     }
   }, []);
 };
@@ -516,10 +414,10 @@ const useLogLevel = (webllm?: WebLLMApi) => {
   // Update log level once app config loads
   useEffect(() => {
     log.setLevel(config.logLevel);
-    if (webllm?.webllm?.engine) {
-      webllm.webllm.engine.setLogLevel(config.logLevel);
+    if (webllm) {
+      webllm.setLogLevel(config.logLevel).catch(() => undefined);
     }
-  }, [config.logLevel, webllm?.webllm?.engine]);
+  }, [config.logLevel, webllm]);
 };
 
 const useModels = (mlcllm: MlcLLMApi | undefined) => {

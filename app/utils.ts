@@ -3,9 +3,8 @@ import { showToast } from "./components/ui-lib";
 import Locale from "./locales";
 import { RequestMessage } from "./client/api";
 import { Model } from "./store";
-import { ModelType } from "@mlc-ai/web-llm";
 import { ChatImage } from "./typing";
-import { WEBLLM_APP_CONFIG } from "./constant";
+import { getModelRuntime } from "./constant";
 
 export function trimTopic(topic: string) {
   // Fix an issue where double quotes still show in the Indonesian language
@@ -273,13 +272,18 @@ export function getMessageImages(message: RequestMessage): ChatImage[] {
 }
 
 export const isVisionModel = (model: Model) =>
-  WEBLLM_APP_CONFIG.model_list.find((m) => m.model_id === model)?.model_type ===
-  ModelType.VLM;
+  getModelRuntime(model)?.supports_images === true;
 
 // Fix various problems in webllm generation
 export function fixMessage(message: string) {
   // RedPajama model incorrectly includes `<human` in response
   message = message.replace(/(<human\s*)+$/, "");
+  message = message
+    .replace(/^<\|turn\>model\s*/gi, "")
+    .replace(/(?:\s*(?:<(?:\|)?turn\|>))+$/gi, "")
+    .replace(/<\|channel\>thought\s*<(?:\|)?channel\|>\s*/gi, "")
+    .replace(/<think>\s*<\/think>\s*/gi, "")
+    .trim();
 
   return message;
 }
