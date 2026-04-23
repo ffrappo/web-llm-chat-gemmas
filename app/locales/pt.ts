@@ -65,7 +65,7 @@ const pt: PartialLocaleType = {
     Copy: "Copiar Tudo",
     Download: "Baixar",
     MessageFromYou: "Mensagem De Você",
-    MessageFromWebLLM: "Mensagem De WebLLM",
+    MessageFromAssistant: "Mensagem De Gemmas",
     Share: "Compartilhar",
     Format: {
       Title: "Formato de Exportação",

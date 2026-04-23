@@ -90,7 +90,7 @@ import { ExportMessageModal } from "./exporter";
 import { MultimodalContent } from "../client/api";
 import { Template, useTemplateStore } from "../store/template";
 import Image from "next/image";
-import { MLCLLMContext, WebLLMContext } from "../context";
+import { BrowserLLMContext, MLCLLMContext } from "../context";
 import { ChatImage } from "../typing";
 import ModelSelect from "./model-select";
 
@@ -613,22 +613,22 @@ function ChatInner() {
   const [attachImages, setAttachImages] = useState<ChatImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showEditPromptModal, setShowEditPromptModal] = useState(false);
-  const webllm = useContext(WebLLMContext)!;
+  const browserLLM = useContext(BrowserLLMContext)!;
   const mlcllm = useContext(MLCLLMContext)!;
 
   const llm =
-    config.modelClientType === ModelClient.MLCLLM_API ? mlcllm : webllm;
+    config.modelClientType === ModelClient.MLCLLM_API ? mlcllm : browserLLM;
 
   const [isModelLoading, setIsModelLoading] = useState(false);
 
   useEffect(() => {
     if (config.modelClientType !== ModelClient.MLCLLM_API) {
-      webllm.onInitChange = setIsModelLoading;
+      browserLLM.onInitChange = setIsModelLoading;
       return () => {
-        webllm.onInitChange = undefined;
+        browserLLM.onInitChange = undefined;
       };
     }
-  }, [config.modelClientType, webllm]);
+  }, [config.modelClientType, browserLLM]);
 
   const isLoading =
     config.modelClientType === ModelClient.MLCLLM_API ? false : isModelLoading;

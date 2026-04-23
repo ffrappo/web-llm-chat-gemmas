@@ -64,8 +64,8 @@ Representative tied configs:
 | `temp=1.15 top_p=0.80 rep=1.06` | `9 / 9` | 0 |
 
 Read:
-- this benchmark is too easy for the current non-thinking Transformers.js path
-- unlike the old WebLLM run, broad screening does not separate configs anymore
+- this benchmark is too easy for the current non-thinking path
+- broad screening does not separate configs
 
 ## Reliability stage
 
@@ -95,7 +95,7 @@ Per-seed scores for the default-style preset:
 - `seed=303`: `17`
 
 Interpretation:
-- the current non-thinking Transformers.js integration is much more stable on this suite than the previous WebLLM path
+- the current non-thinking integration is stable on this suite
 - this suite no longer gives enough pressure to justify changing the current default preset
 
 ## Follow-up checks
@@ -119,8 +119,7 @@ Neutral system prompt (`You are a concise assistant.`):
 - `0` hard failures
 
 Read:
-- on this short benchmark, Transformers.js did not show the 8K collapse seen in the old WebLLM run
-- the penalty knobs also did not materially change score on the tested subset
+- the penalty knobs did not materially change score on the tested subset
 
 ## Exact-format spot checks
 
@@ -188,7 +187,6 @@ Using the same default-style preset with only `context_window_size` changed:
 
 Read:
 - the short benchmark does not regress when the configured window is raised to `100000` or the declared max
-- this is much better than the old WebLLM 8K collapse on the same short-style checks
 
 ### Long-prefill smoke test
 

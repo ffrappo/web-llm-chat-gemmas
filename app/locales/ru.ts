@@ -37,7 +37,7 @@ const ru: PartialLocaleType = {
     Copy: "Копировать все",
     Download: "Скачать",
     MessageFromYou: "Сообщение от вас",
-    MessageFromWebLLM: "Сообщение от WebLLM",
+    MessageFromAssistant: "Сообщение от Gemmas",
   },
   Memory: {
     Title: "Память",

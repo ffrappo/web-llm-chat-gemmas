@@ -274,7 +274,6 @@ export function getMessageImages(message: RequestMessage): ChatImage[] {
 export const isVisionModel = (model: Model) =>
   getModelRuntime(model)?.supports_images === true;
 
-// Fix various problems in webllm generation
 export function fixMessage(message: string) {
   // RedPajama model incorrectly includes `<human` in response
   message = message.replace(/(<human\s*)+$/, "");

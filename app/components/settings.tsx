@@ -28,7 +28,7 @@ import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
 import { useNavigate } from "react-router-dom";
 import { nanoid } from "nanoid";
-import { WebLLMContext } from "../context";
+import { BrowserLLMContext } from "../context";
 import { LogLevel } from "../client/api";
 
 function EditPromptModal(props: { id: string; onClose: () => void }) {
@@ -227,7 +227,7 @@ export function Settings() {
   const navigate = useNavigate();
   const config = useAppConfig();
   const updateConfig = config.update;
-  const webllm = useContext(WebLLMContext);
+  const browserLLM = useContext(BrowserLLMContext);
 
   const promptStore = usePromptStore();
   const builtinCount = SearchService.count.builtin;
@@ -524,7 +524,7 @@ export function Settings() {
                   ([_, value]) => value === parseInt(e.target.value),
                 )?.[0] as LogLevel;
 
-                webllm?.setLogLevel(logLevel).catch(() => undefined);
+                browserLLM?.setLogLevel(logLevel).catch(() => undefined);
                 log.setLevel(logLevel);
                 updateConfig((config) => (config.logLevel = logLevel));
               }}

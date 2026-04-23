@@ -394,7 +394,7 @@ export function ImagePreviewer(props: {
           </div>
 
           <div>
-            <div className={styles["main-title"]}>Fornace WebLLM Chat</div>
+            <div className={styles["main-title"]}>Gemmas</div>
             <div className={styles["sub-title"]}>{window.location.host}</div>
           </div>
           <div>
@@ -479,7 +479,7 @@ export function MarkdownPreviewer(props: {
       .map((m) => {
         return m.role === "user"
           ? `## ${Locale.Export.MessageFromYou}:\n${getMessageTextContent(m)}`
-          : `## ${Locale.Export.MessageFromWebLLM}:\n${getMessageTextContent(
+          : `## ${Locale.Export.MessageFromAssistant}:\n${getMessageTextContent(
               m,
             ).trim()}`;
       })

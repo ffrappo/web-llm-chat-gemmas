@@ -33,7 +33,7 @@ const no: PartialLocaleType = {
     Copy: "Kopiere alle",
     Download: "Last ned",
     MessageFromYou: "Melding fra deg",
-    MessageFromWebLLM: "Melding fra WebLLM",
+    MessageFromAssistant: "Melding fra Gemmas",
   },
   Memory: {
     Title: "Minneinstruks",

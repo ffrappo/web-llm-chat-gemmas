@@ -67,7 +67,7 @@ const sk: PartialLocaleType = {
     Copy: "Kopírovať všetko",
     Download: "Stiahnuť",
     MessageFromYou: "Správa od vás",
-    MessageFromWebLLM: "Správa od WebLLM",
+    MessageFromAssistant: "Správa od Gemmas",
     Share: "Zdieľať",
     Format: {
       Title: "Formát exportu",

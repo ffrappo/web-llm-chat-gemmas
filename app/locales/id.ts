@@ -59,7 +59,7 @@ const id: PartialLocaleType = {
     Copy: "Salin Semua",
     Download: "Unduh",
     MessageFromYou: "Pesan dari Anda",
-    MessageFromWebLLM: "Pesan dari WebLLM",
+    MessageFromAssistant: "Pesan dari Gemmas",
     Share: "Bagikan",
     Format: {
       Title: "Format Ekspor",

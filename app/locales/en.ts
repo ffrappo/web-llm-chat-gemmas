@@ -3,7 +3,7 @@ import { SubmitKey } from "../store/config";
 // if you are adding a new translation, please use PartialLocaleType instead of LocaleType
 
 const en = {
-  Title: "Fornace WebLLM Chat",
+  Title: "Gemmas",
   Subtitle: "AI runs in your browser — your data never leaves your computer",
   WIP: "Coming Soon...",
   ChatItem: {
@@ -78,7 +78,7 @@ const en = {
     Copy: "Copy All",
     Download: "Download",
     MessageFromYou: "Message From You",
-    MessageFromWebLLM: "Message From Fornace",
+    MessageFromAssistant: "Message From Fornace",
     Share: "Share",
     Format: {
       Title: "Export Format",
@@ -262,7 +262,7 @@ const en = {
     Model: "Model",
     ModelClientType: {
       Title: "Model Type",
-      WebLlm: "Transformers.js (Local Browser)",
+      Browser: "Transformers.js (Local Browser)",
       MlcLlm: "MLC-LLM REST API (Advanced)",
     },
 

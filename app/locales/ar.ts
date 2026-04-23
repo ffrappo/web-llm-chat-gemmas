@@ -48,7 +48,7 @@ const ar: PartialLocaleType = {
     Copy: "نسخ الكل",
     Download: "تنزيل",
     MessageFromYou: "رسالة منك",
-    MessageFromWebLLM: "رسالة من WebLLM",
+    MessageFromAssistant: "رسالة من Gemmas",
     Share: "مشاركة",
     Format: {
       Title: "صيغة التصدير",

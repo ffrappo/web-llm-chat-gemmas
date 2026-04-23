@@ -36,7 +36,7 @@ const tr: PartialLocaleType = {
     Copy: "Tümünü Kopyala",
     Download: "İndir",
     MessageFromYou: "Sizin Mesajınız",
-    MessageFromWebLLM: "WebLLM'nin Mesajı",
+    MessageFromAssistant: "Gemmas'nin Mesajı",
   },
   Memory: {
     Title: "Bellek Komutları",

@@ -62,7 +62,7 @@ export function ModelConfigList() {
         <Select
           value={config.modelClientType}
           onChange={(e) => {
-            if (e.target.value === ModelClient.WEBLLM) {
+            if (e.target.value === ModelClient.BROWSER) {
               config.update((config) => {
                 config.modelClientType = e.target.value as ModelClient;
               });
@@ -71,8 +71,8 @@ export function ModelConfigList() {
             }
           }}
         >
-          <option value={ModelClient.WEBLLM} key={ModelClient.WEBLLM}>
-            {Locale.Settings.ModelClientType.WebLlm}
+          <option value={ModelClient.BROWSER} key={ModelClient.BROWSER}>
+            {Locale.Settings.ModelClientType.Browser}
           </option>
           <option value={ModelClient.MLCLLM_API} key={ModelClient.MLCLLM_API}>
             {Locale.Settings.ModelClientType.MlcLlm}
@@ -80,7 +80,7 @@ export function ModelConfigList() {
         </Select>
       </ListItem>
 
-      {config.modelClientType === ModelClient.WEBLLM && (
+      {config.modelClientType === ModelClient.BROWSER && (
         <>
           <ListItem title={Locale.Settings.Model}>
             <Select

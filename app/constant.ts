@@ -1,8 +1,8 @@
 import { ModelRecord } from "./client/api";
 
 export const OWNER = "fornacestudio";
-export const REPO = "fornace-webllm-chat";
-export const WEBLLM_HOME_URL = "https://fornacestudio.com";
+export const REPO = "gemmas";
+export const HOME_URL = "https://fornacestudio.com";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
 
@@ -47,7 +47,7 @@ export const ACCESS_CODE_PREFIX = "nk-";
 export const LAST_INPUT_KEY = "last-input";
 export const UNFINISHED_INPUT = (name: string) => "unfinished-input-" + name;
 
-export const STORAGE_KEY = "fornace-webllm-chat";
+export const STORAGE_KEY = "gemmas";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 
@@ -57,10 +57,9 @@ export const DEFAULT_INPUT_TEMPLATE = `{{input}}`; // input / time / model / lan
 
 export const DEFAULT_SYSTEM_TEMPLATE = `
 You are an AI large language model assistant trained by {{provider}}.
-You are currently engaging with users on Fornace WebLLM Chat, an open-source AI Chatbot UI developed by Fornace Studio.
 Model display_name:  {{model}}
 The current date and time is {{time}}.
-Latex inline format: \\(x^2\\) 
+Latex inline format: \\(x^2\\)
 Latex block format: $$e=mc^2$$
 `;
 
@@ -90,10 +89,6 @@ const qwen3_common_configs = {
   },
 };
 
-export const LEGACY_GEMMA4_MODEL_ID = "gemma-4-E2B-it-q4f16_1-MLC";
-export const PINNED_WEBLLM_GEMMA4_MODEL_ID =
-  "gemma-4-E2B-it-q4f16_1-MLC-r387f4e9";
-export const PREVIOUS_GEMMA4_MODEL_ID = "gemma-4-E2B-it-ONNX-onnx-r5f09dcf";
 export const GEMMA4_MODEL_REPO = "onnx-community/gemma-4-E2B-it-ONNX";
 export const GEMMA4_MODEL_WEIGHTS_REVISION =
   "5f09dcfb04eddbc9d8e2ebd8a0bf5250d048c79e";
@@ -101,7 +96,6 @@ export const GEMMA4_MODEL_REVISION = "ee1a73e8f4cb9aab6c7165231bf7e8e6331051cc";
 export const GEMMA4_MODEL_CACHE_VERSION = "onnx-ree1a73e";
 export const GEMMA4_MODEL_ID = `gemma-4-E2B-it-ONNX-${GEMMA4_MODEL_CACHE_VERSION}`;
 export const DEFAULT_MODEL_ID = GEMMA4_MODEL_ID;
-export const LEGACY_DEFAULT_MODEL = LEGACY_GEMMA4_MODEL_ID;
 
 const GEMMA4_PRESET_BASE = {
   context_window_size: 16384,
@@ -136,18 +130,8 @@ export const GEMMA4_BENCH_PRESET = {
   max_tokens: 256,
 } as const;
 
-const MODEL_ID_MIGRATIONS: Readonly<Record<string, string>> = {
-  [LEGACY_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
-  [PINNED_WEBLLM_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
-  [PREVIOUS_GEMMA4_MODEL_ID]: GEMMA4_MODEL_ID,
-};
-
 export function resolveCurrentModelId(modelId?: string | null) {
-  if (!modelId) {
-    return DEFAULT_MODEL_ID;
-  }
-
-  return MODEL_ID_MIGRATIONS[modelId] ?? modelId;
+  return modelId || DEFAULT_MODEL_ID;
 }
 
 const MODEL_RUNTIME = {

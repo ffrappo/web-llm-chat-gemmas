@@ -36,7 +36,7 @@ const de: PartialLocaleType = {
     Copy: "Alles kopieren",
     Download: "Herunterladen",
     MessageFromYou: "Deine Nachricht",
-    MessageFromWebLLM: "Nachricht von WebLLM",
+    MessageFromAssistant: "Nachricht von Gemmas",
   },
   Memory: {
     Title: "Gedächtnis-Prompt",

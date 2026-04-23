@@ -37,7 +37,7 @@ const cs: PartialLocaleType = {
     Copy: "Kopírovat vše",
     Download: "Stáhnout",
     MessageFromYou: "Zpráva od vás",
-    MessageFromWebLLM: "Zpráva z WebLLM",
+    MessageFromAssistant: "Zpráva z Gemmas",
   },
   Memory: {
     Title: "Pokyn z paměti",

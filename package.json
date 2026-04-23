@@ -1,5 +1,5 @@
 {
-  "name": "fornace-webllm-chat",
+  "name": "gemmas",
   "version": "0.2",
   "private": false,
   "license": "Apache-2.0",
@@ -18,7 +18,6 @@
     "@fortaine/fetch-event-source": "^3.0.6",
     "@hello-pangea/dnd": "^16.5.0",
     "@huggingface/transformers": "^4.2.0",
-    "@mlc-ai/web-llm": "^0.2.81",
     "@serwist/next": "^9.0.2",
     "@svgr/webpack": "^6.5.1",
     "emoji-picker-react": "^4.9.2",

@@ -72,7 +72,7 @@ const tw = {
     Download: "下載檔案",
     Share: "分享",
     MessageFromYou: "來自您的訊息",
-    MessageFromWebLLM: "來自 WebLLM 的訊息",
+    MessageFromAssistant: "來自 Gemmas 的訊息",
     Format: {
       Title: "匯出格式",
       SubTitle: "可以匯出 Markdown 文字檔或者 PNG 圖片",

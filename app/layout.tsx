@@ -7,11 +7,11 @@ import { type Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fornacestudio.com"),
-  title: "Fornace WebLLM Chat",
+  title: "Gemmas",
   description:
-    "Chat with AI large language models running natively in your browser. Your data never leaves your computer — enjoy private, server-free, seamless AI conversations.",
+    "Chat with AI large language models running natively in your browser. Your data never leaves your computer.",
   keywords: [
-    "WebLLM",
+    "Gemma",
     "AI chat",
     "machine learning",
     "browser AI",
@@ -32,28 +32,28 @@ export const metadata: Metadata = {
     { media: "(prefers-color-scheme: dark)", color: "#151515" },
   ],
   appleWebApp: {
-    title: "Fornace WebLLM Chat",
+    title: "Gemmas",
     statusBarStyle: "default",
   },
   openGraph: {
     type: "website",
     url: "https://fornacestudio.com",
-    title: "Fornace WebLLM Chat",
+    title: "Gemmas",
     description:
       "Chat with AI large language models running natively in your browser",
-    siteName: "Fornace WebLLM Chat",
+    siteName: "Gemmas",
     images: [
       {
         url: "https://fornacestudio.com/mlc-logo.png",
         width: 360,
         height: 360,
-        alt: "Fornace WebLLM Chat - Browser-based AI conversation",
+        alt: "Gemmas - Browser-based AI conversation",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fornace WebLLM Chat",
+    title: "Gemmas",
     description:
       "Chat with AI large language models running natively in your browser",
     images: ["https://fornacestudio.com/mlc-logo.png"],
@@ -123,10 +123,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "Fornace WebLLM Chat",
+              name: "Gemmas",
               url: "https://fornacestudio.com",
               description:
-                "Chat with AI large language models running natively in your browser. Your data never leaves your computer — enjoy private, server-free, seamless AI conversations.",
+                "Chat with AI large language models running natively in your browser. Your data never leaves your computer.",
               applicationCategory: "Artificial Intelligence",
               offers: {
                 "@type": "Offer",

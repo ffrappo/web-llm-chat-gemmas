@@ -72,7 +72,7 @@ const cn = {
     Download: "下载文件",
     Share: "分享",
     MessageFromYou: "用户",
-    MessageFromWebLLM: "WebLLM",
+    MessageFromAssistant: "Gemmas",
     Format: {
       Title: "导出格式",
       SubTitle: "可以导出 Markdown 文本或者 PNG 图片",

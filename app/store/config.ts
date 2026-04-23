@@ -2,11 +2,10 @@ import { LogLevel, ModelRecord } from "../client/api";
 import {
   DEFAULT_MODEL,
   DEFAULT_INPUT_TEMPLATE,
-  LEGACY_DEFAULT_MODEL,
   DEFAULT_MODELS,
-  resolveCurrentModelId,
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
+  resolveCurrentModelId,
 } from "../constant";
 import { createPersistStore } from "../utils/store";
 
@@ -32,7 +31,7 @@ export enum CacheType {
 }
 
 export enum ModelClient {
-  WEBLLM = "webllm",
+  BROWSER = "browser",
   MLCLLM_API = "mlc-llm-api",
 }
 
@@ -136,7 +135,7 @@ export const DEFAULT_CONFIG: ConfigType = {
   enableInjectSystemPrompts: false,
   template: DEFAULT_INPUT_TEMPLATE,
 
-  modelClientType: ModelClient.WEBLLM,
+  modelClientType: ModelClient.BROWSER,
   models: DEFAULT_MODELS,
   cacheType: CacheType.Cache,
   logLevel: "INFO",
@@ -249,41 +248,6 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 0.7,
-    migrate: (persistedState, version) => {
-      if (version < 0.7) {
-        const nextState = persistedState as any;
-        const persistedModel = nextState?.modelConfig?.model;
-        const normalizedPersistedModel = resolveCurrentModelId(persistedModel);
-        const hasPersistedModel = DEFAULT_MODELS.some(
-          (model) => model.name === normalizedPersistedModel,
-        );
-        const shouldUpgradeToGemmaDefault =
-          !persistedModel || persistedModel === LEGACY_DEFAULT_MODEL;
-
-        return {
-          ...DEFAULT_CONFIG,
-          ...nextState,
-          models: DEFAULT_MODELS as any as ModelRecord[],
-          modelConfig: {
-            ...DEFAULT_MODEL_CONFIG,
-            ...(nextState?.modelConfig ?? {}),
-            model:
-              hasPersistedModel && !shouldUpgradeToGemmaDefault
-                ? normalizedPersistedModel
-                : DEFAULT_MODEL,
-            top_k:
-              typeof nextState?.modelConfig?.top_k === "number"
-                ? ModalConfigValidator.top_k(nextState.modelConfig.top_k)
-                : DEFAULT_MODEL_CONFIG.top_k,
-            do_sample:
-              typeof nextState?.modelConfig?.do_sample === "boolean"
-                ? nextState.modelConfig.do_sample
-                : DEFAULT_MODEL_CONFIG.do_sample,
-          },
-        };
-      }
-      return persistedState;
-    },
+    version: 1,
   },
 );

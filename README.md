@@ -1,60 +1,133 @@
-<div align="center">
+# Gemmas
 
-# Fornace WebLLM Chat
+A **Gemma 4 chat app that runs entirely in your browser** — no server, no API key, no request ever leaves the tab. Weights stream from Hugging Face the first time, then live in browser storage. Inference is WebGPU through a **Transformers.js + ONNX Runtime Web** worker.
 
-<a href="https://fornacestudio.com"><img alt="Fornace Studio" src="https://img.shields.io/badge/Fornace_Studio-Website-fafbfc?logo=firefox"></a>
+## Why this repo is interesting
 
-**Private AI Conversations, Fully In-Browser.**
+- **Fully local Gemma 4 E2B-it** in a dedicated `Worker`, WebGPU by default, `q4f16` quantized, multimodal metadata (image + audio) wired in.
+- **Custom preload pipeline** with eight observable phases — `checkingCache → preparingRuntime → requestingGpu → fetchingModelFiles → loadingModel → warmingUp → finalizing → ready`. The UI shows exactly where the load is and whether weights came from cache.
+- **Pinned model revisions** in [`app/constant.ts`](app/constant.ts) so the browser cache key never drifts from under a user.
+- **Abortable streaming** via Transformers.js `InterruptableStoppingCriteria`, tunneled through a typed request/response protocol ([`app/client/browser-llm-protocol.ts`](app/client/browser-llm-protocol.ts)).
+- **A real benchmark lab**, not a toy. [`app/bench/page.tsx`](app/bench/page.tsx) exposes `window.__bench` with latin-hypercube sampling, reliability stages, multi-seed runs, and a scoring suite for format-exactness and concise-answer prompts.
+- **Benchmark results checked into the repo** — see [`docs/benchmarks/`](docs/benchmarks/). Honest numbers, including where the browser path breaks.
 
-Your messages and data never leave your computer. A full-featured AI runs directly in your browser — no internet connection required after the first model download.
+## Architecture
 
-</div>
+```
+ app/page.tsx (chat UI)
+        │
+        ▼
+ app/client/browser-llm.ts ──postMessage──► app/worker/web-worker.ts
+   (BrowserLLM, typed RPC)                (Transformers.js + onnxruntime-web)
+        ▲                                          │
+        │                                          ▼
+ stream / progress / result                 Gemma4ForConditionalGeneration
+                                            Gemma4Processor
+                                            WebGPU · q4f16
+```
 
-## Overview
+The main thread never blocks on inference. The worker loads Transformers.js from a pinned CDN URL, then loads the model from `onnx-community/gemma-4-E2B-it-ONNX` at fixed weight and processor revisions. WASM threading is forced to a single thread and the proxy is disabled to keep memory behavior predictable across Safari and Chrome.
 
-**Fornace WebLLM Chat** is a private AI chat interface that runs large language models (LLMs) natively in your browser using WebGPU. Enjoy an unprecedented, private, and accessible AI conversation experience — completely serverless.
+## The bench lab
 
-## Key Features
+Open `/bench` in the running app and `window.__bench` appears on the page:
 
-- **Browser-Native AI**: Experience cutting-edge language models running natively within your web browser with WebGPU acceleration, eliminating the need for server-side processing or cloud dependencies.
-- **Guaranteed Privacy**: With the AI model running locally on your hardware and all data processing happening within your browser, your data and conversations never leave your computer, ensuring your privacy.
-- **Offline Accessibility**: Run entirely offline after the initial setup and download, allowing you to engage with AI-powered conversations without an active internet connection.
-- **Vision Model Support**: Chat with AI by uploading and sending images, making it easy to get insights and answers based on visual content.
-- **User-Friendly Interface**: Enjoy the intuitive and feature-rich user interface, complete with markdown support, dark mode, and a responsive design optimized for various screen sizes.
-- **Custom Models**: Connect to any custom language model on your local environment through MLC-LLM.
-- **Open Source and Customizable**: Build and customize your own AI-powered applications with our open-source framework.
+```ts
+__bench.load(override?)
+__bench.warmup(override?)
+__bench.runPrompt(prompt, override?)
+__bench.runSuite(override?, options?)
+__bench.runBatch(configs, options?)
+__bench.runReliability(override?, { seeds, trials })
+__bench.screenConfigs(configs, { seeds, trials })
+__bench.generateLatinHypercube(space, count, seed?, base?)
+__bench.clearAppChats()
+__bench.getState()
+```
 
-## Built-in Models
+The built-in suite scores six prompts covering one-word answers, single-sentence factual composition, strict minified JSON, string reversal, letter counting, code-only output, and a longer-form explanation — each with weighted, deterministic scorers and a generic-failure detector that catches leaked `<think>` tags and "please tell me what you would like me to do" non-answers.
 
-Fornace WebLLM Chat natively supports WebLLM built-in models.
+This is what produced the tuning notes in `docs/benchmarks/`.
 
-## Development
+## Current default preset
 
-```shell
-# 1. install nodejs and yarn first
-# 2. config local env vars in `.env.local`
-# 3. run
+Derived from the 2026-04-23 tuning run. Non-thinking, stable across five seeds on the 17-point reliability subset:
+
+```
+temperature        1.00
+top_p              0.95
+top_k              64
+repetition_penalty 1.05
+context_window     16384
+max_tokens         4000
+do_sample          true
+stream             true
+```
+
+Thinking mode is wired up (`enable_thinking`) but **not** the default — it still degrades format-sensitive prompts by emitting a visible `Thinking Process:` prelude instead of just answering.
+
+## Honest limits
+
+The model card advertises 128K context and the runtime metadata declares `max_context_window: 131072`. On the tested browser/hardware combo:
+
+- raising `context_window_size` to `100000` or `131072` is accepted and **does not** regress the short benchmark
+- actual long prefill failed with `RuntimeError: memory access out of bounds` somewhere between ~2.9k and higher prompt-token lengths
+
+Treat the 128K number as **a config ceiling, not a validated effective context**. Real in-browser long-context on commodity hardware is an open problem, not a shipped feature.
+
+## Caching
+
+- Browser weight storage is selectable between **Cache API** and **IndexedDB** in the model config UI.
+- Cache hits vs. fresh downloads are reflected in the preload progress (`cached: true | false | null`).
+- Artifact caching is delegated to Transformers.js and the browser.
+
+## Running it
+
+```sh
 yarn install
 yarn dev
 ```
 
-## Deployment
+Requirements: Node.js, Yarn 1.x, a browser with WebGPU (recent Chrome/Edge, Safari 18+ with the feature enabled).
 
-### Build
+Other scripts:
 
-You can build the application as a Next.js build using `yarn build` or as a static site using `yarn export`.
-
-### Docker
-
-```shell
-docker build -t fornace-webllm-chat .
-docker run -d -p 3000:3000 fornace-webllm-chat
+```sh
+yarn lint
+yarn build            # standalone Next.js build
+yarn export           # static export
+./node_modules/.bin/tsc --noEmit
 ```
 
-## Acknowledgements
+## Deployment
 
-Fornace WebLLM Chat is a fork of [NextChat](https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web), originally built by the MLC.ai team as WebLLM Chat. Maintained by [Fornace Studio](https://fornacestudio.com).
+Three build modes:
 
-We extend our sincere gratitude to the developers and contributors of NextChat and the original WebLLM Chat for their invaluable efforts in advancing browser-based AI and creating user-friendly chat interfaces.
+- **Standalone Next.js** (`yarn build`) — deploy on Vercel, Node server, anything that runs Next.
+- **Static export** (`yarn export`) — drop the output on any static host, including GitHub Pages.
+- **Docker** — `docker build -t gemmas . && docker run -p 3000:3000 gemmas`. The Dockerfile honors `PROXY_URL` if you need outbound proxying for Hugging Face downloads.
 
-Further more, this project is only possible thanks to the shoulders of open-source ecosystems that we stand on. We want to thank the Apache TVM community and developers of the TVM Unity effort. The open-source ML community members made these models publicly available. PyTorch and Hugging Face communities make these models accessible. We would like to thank the teams behind Vicuna, SentencePiece, LLaMA, Alpaca. We also would like to thank the WebAssembly, Emscripten, and WebGPU communities. Finally, thanks to Dawn and WebGPU developers.
+## Optional: MLC-LLM REST mode
+
+There's a secondary client ([`app/client/mlcllm.ts`](app/client/mlcllm.ts)) that points the UI at a local `mlc_llm serve` endpoint over REST. Not the focus, but it works.
+
+## Layout
+
+```
+app/
+  bench/page.tsx              ← benchmark lab + window.__bench
+  client/
+    api.ts                    ← LLMApi surface
+    browser-llm-protocol.ts   ← typed worker RPC
+    browser-llm.ts            ← main-thread BrowserLLM client
+    mlcllm.ts                 ← optional REST client
+  worker/web-worker.ts        ← Transformers.js + ORT worker
+  constant.ts                 ← pinned model IDs, revisions, presets
+  components/                 ← chat, settings, model config UI
+  store/                      ← zustand stores
+docs/benchmarks/              ← checked-in tuning notes
+```
+
+## Origin
+
+Originally forked from [NextChat](https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web) via [WebLLM Chat](https://github.com/mlc-ai/web-llm-chat); the runtime has since been rewritten on Transformers.js. Apache-2.0.

@@ -7,7 +7,8 @@ import {
   LLMConfig,
   RequestMessage,
 } from "../client/api";
-import { WebLLMApi, WebLLMPreloadProgress } from "../client/webllm";
+import { BrowserLLM } from "../client/browser-llm";
+import type { BrowserLLMPreloadProgress } from "../client/browser-llm-protocol";
 import { DEFAULT_MODEL } from "../constant";
 import { CacheType, useChatStore } from "../store";
 
@@ -112,7 +113,7 @@ type BenchApi = {
   ) => BenchConfig[];
   load: (override?: BenchConfig) => Promise<{
     config: LLMConfig;
-    progress?: WebLLMPreloadProgress;
+    progress?: BrowserLLMPreloadProgress;
   }>;
   runReliability: (
     override?: BenchConfig,
@@ -148,14 +149,14 @@ type BenchApi = {
   getState: () => {
     status: string;
     config: LLMConfig;
-    progress?: WebLLMPreloadProgress;
+    progress?: BrowserLLMPreloadProgress;
     lastResult?: BenchSuiteResult;
   };
 };
 
 declare global {
   interface Window {
-    __webllmBench?: BenchApi;
+    __bench?: BenchApi;
   }
 }
 
@@ -582,15 +583,15 @@ function compareReliabilityResults(
 export default function BenchPage() {
   const statusRef = useRef("idle");
   const configRef = useRef<LLMConfig>(DEFAULT_BENCH_CONFIG);
-  const progressRef = useRef<WebLLMPreloadProgress>();
+  const progressRef = useRef<BrowserLLMPreloadProgress>();
   const resultRef = useRef<BenchSuiteResult>();
 
   const [status, setStatus] = useState(statusRef.current);
-  const [progress, setProgress] = useState<WebLLMPreloadProgress>();
+  const [progress, setProgress] = useState<BrowserLLMPreloadProgress>();
   const [lastResult, setLastResult] = useState<BenchSuiteResult>();
 
   useEffect(() => {
-    const api = new WebLLMApi("webWorker", "WARN");
+    const api = new BrowserLLM("webWorker", "WARN");
     const clearAppChats = () => {
       useChatStore.getState().clearSessions();
     };
@@ -798,7 +799,7 @@ export default function BenchPage() {
       return results.sort(compareReliabilityResults);
     };
 
-    window.__webllmBench = {
+    window.__bench = {
       clearAppChats,
       generateLatinHypercube: sampleLatinHypercube,
       load,
@@ -819,8 +820,8 @@ export default function BenchPage() {
     };
 
     return () => {
-      if (window.__webllmBench) {
-        delete window.__webllmBench;
+      if (window.__bench) {
+        delete window.__bench;
       }
       api.abort().catch(() => undefined);
     };
@@ -837,13 +838,13 @@ export default function BenchPage() {
         color: "#1f1a17",
       }}
     >
-      <h1 style={{ marginTop: 0 }}>WebLLM Bench</h1>
+      <h1 style={{ marginTop: 0 }}>Bench</h1>
       <p style={{ maxWidth: 780, lineHeight: 1.5 }}>
         This route is a local tuning harness. Open the browser console or use
-        Playwright and call <code>window.__webllmBench</code> to load the model,
-        run prompts, and sweep configs without reloading the page. The most
-        useful methods are <code>generateLatinHypercube()</code> for broad
-        screening, <code>runReliability()</code> for repeated seeded trials, and{" "}
+        Playwright and call <code>window.__bench</code> to load the model, run
+        prompts, and sweep configs without reloading the page. The most useful
+        methods are <code>generateLatinHypercube()</code> for broad screening,{" "}
+        <code>runReliability()</code> for repeated seeded trials, and{" "}
         <code>screenConfigs()</code> for ranking configs by failure rate before
         deeper benchmarking.
       </p>

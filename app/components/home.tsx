@@ -24,13 +24,13 @@ import { ErrorBoundary } from "./error";
 import { getISOLang, getLang } from "../locales";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
-import {
-  WebLLMApi,
-  type WebLLMPreloadPhase,
-  type WebLLMPreloadProgress,
-} from "../client/webllm";
+import { BrowserLLM } from "../client/browser-llm";
+import type {
+  BrowserLLMPreloadPhase,
+  BrowserLLMPreloadProgress,
+} from "../client/browser-llm-protocol";
 import { ModelClient, useChatStore } from "../store";
-import { MLCLLMContext, WebLLMContext } from "../context";
+import { BrowserLLMContext, MLCLLMContext } from "../context";
 import { MlcLLMApi } from "../client/mlcllm";
 import { formatErrorMessage } from "../utils/error";
 import { IconButton } from "./button";
@@ -44,14 +44,6 @@ export function Loading(props: { noLogo?: boolean }) {
         </div>
       )}
       <LoadingIcon />
-    </div>
-  );
-}
-
-export function ErrorScreen(props: { message: string }) {
-  return (
-    <div className={styles["error-screen"] + " no-dark"}>
-      <p>{props.message}</p>
     </div>
   );
 }
@@ -130,7 +122,7 @@ const loadAsyncFonts = () => {
   document.head.appendChild(linkEl);
 };
 
-const BOOTSTRAP_PHASES: Exclude<WebLLMPreloadPhase, "ready">[] = [
+const BOOTSTRAP_PHASES: Exclude<BrowserLLMPreloadPhase, "ready">[] = [
   "checkingCache",
   "preparingRuntime",
   "requestingGpu",
@@ -142,7 +134,7 @@ const BOOTSTRAP_PHASES: Exclude<WebLLMPreloadPhase, "ready">[] = [
 
 type InitialModelLoadState = {
   phase: "idle" | "loading" | "ready" | "error";
-  stage: WebLLMPreloadPhase;
+  stage: BrowserLLMPreloadPhase;
   modelName: string;
   progress: number;
   text: string;
@@ -156,7 +148,7 @@ function getModelDisplayName(modelId: string) {
 
 function getBootstrapPhaseState(
   phase: (typeof BOOTSTRAP_PHASES)[number],
-  currentPhase: WebLLMPreloadPhase,
+  currentPhase: BrowserLLMPreloadPhase,
   isError: boolean,
 ) {
   const currentIndex = BOOTSTRAP_PHASES.indexOf(
@@ -179,11 +171,11 @@ function getBootstrapPhaseState(
   return isError ? "error" : "current";
 }
 
-function getBootstrapPhaseLabel(phase: WebLLMPreloadPhase) {
+function getBootstrapPhaseLabel(phase: BrowserLLMPreloadPhase) {
   return Locale.Home.ModelLoad.Phases[phase];
 }
 
-function getBootstrapPhaseDescription(phase: WebLLMPreloadPhase) {
+function getBootstrapPhaseDescription(phase: BrowserLLMPreloadPhase) {
   return Locale.Home.ModelLoad.PhaseDescription[phase];
 }
 
@@ -318,19 +310,21 @@ function Screen() {
   );
 }
 
-const useWebLLM = () => {
-  const [webllm, setWebLLM] = useState<WebLLMApi | undefined>(undefined);
+const useBrowserLLM = () => {
+  const [browserLLM, setBrowserLLM] = useState<BrowserLLM | undefined>(
+    undefined,
+  );
   useEffect(() => {
     log.info("Starting browser LLM worker.");
-    const api = new WebLLMApi("webWorker");
-    setWebLLM(api);
+    const api = new BrowserLLM("webWorker");
+    setBrowserLLM(api);
 
     return () => {
       api.abort().catch(() => undefined);
     };
   }, []);
 
-  return { webllm, isWebllmActive: true };
+  return browserLLM;
 };
 
 const useMlcLLM = () => {
@@ -408,23 +402,22 @@ const useStopStreamingMessages = () => {
   }, []);
 };
 
-const useLogLevel = (webllm?: WebLLMApi) => {
+const useLogLevel = (browserLLM?: BrowserLLM) => {
   const config = useAppConfig();
 
-  // Update log level once app config loads
   useEffect(() => {
     log.setLevel(config.logLevel);
-    if (webllm) {
-      webllm.setLogLevel(config.logLevel).catch(() => undefined);
+    if (browserLLM) {
+      browserLLM.setLogLevel(config.logLevel).catch(() => undefined);
     }
-  }, [config.logLevel, webllm]);
+  }, [config.logLevel, browserLLM]);
 };
 
 const useModels = (mlcllm: MlcLLMApi | undefined) => {
   const config = useAppConfig();
 
   useEffect(() => {
-    if (config.modelClientType == ModelClient.WEBLLM) {
+    if (config.modelClientType == ModelClient.BROWSER) {
       config.setModels(DEFAULT_MODELS);
     } else if (config.modelClientType == ModelClient.MLCLLM_API) {
       if (mlcllm) {
@@ -439,7 +432,7 @@ const useModels = (mlcllm: MlcLLMApi | undefined) => {
 export function Home() {
   const hasHydrated = useHasHydrated();
   const config = useAppConfig();
-  const { webllm, isWebllmActive } = useWebLLM();
+  const browserLLM = useBrowserLLM();
   const mlcllm = useMlcLLM();
   const hasTriggeredAutoPreload = useRef(false);
   const lastHandledPreloadRetryKey = useRef<number | null>(null);
@@ -461,14 +454,14 @@ export function Home() {
   useLoadUrlParam();
   useStopStreamingMessages();
   useModels(mlcllm);
-  useLogLevel(webllm);
+  useLogLevel(browserLLM);
 
   useEffect(() => {
-    if (!hasHydrated || !webllm || !isWebllmActive) {
+    if (!hasHydrated || !browserLLM) {
       return;
     }
 
-    if (config.modelClientType !== ModelClient.WEBLLM) {
+    if (config.modelClientType !== ModelClient.BROWSER) {
       setInitialModelLoad((state) =>
         state.phase === "ready"
           ? state
@@ -513,8 +506,8 @@ export function Home() {
       cached: null,
     });
 
-    webllm
-      .preload(preloadConfig, (report: WebLLMPreloadProgress) => {
+    browserLLM
+      .preload(preloadConfig, (report: BrowserLLMPreloadProgress) => {
         if (isCancelled) {
           return;
         }
@@ -563,21 +556,16 @@ export function Home() {
     config.modelClientType,
     config.modelConfig,
     hasHydrated,
-    isWebllmActive,
     preloadRetryKey,
-    webllm,
+    browserLLM,
   ]);
 
-  if (!hasHydrated || !webllm) {
+  if (!hasHydrated || !browserLLM) {
     return <Loading />;
   }
 
-  if (!isWebllmActive) {
-    return <ErrorScreen message={Locale.ServiceWorker.Error} />;
-  }
-
   const showInitialModelOverlay =
-    config.modelClientType === ModelClient.WEBLLM &&
+    config.modelClientType === ModelClient.BROWSER &&
     !allowContinueWithoutPreload &&
     (initialModelLoad.phase === "loading" ||
       initialModelLoad.phase === "error");
@@ -585,11 +573,11 @@ export function Home() {
   return (
     <ErrorBoundary>
       <Router>
-        <WebLLMContext.Provider value={webllm}>
+        <BrowserLLMContext.Provider value={browserLLM}>
           <MLCLLMContext.Provider value={mlcllm}>
             <Screen />
           </MLCLLMContext.Provider>
-        </WebLLMContext.Provider>
+        </BrowserLLMContext.Provider>
       </Router>
       {showInitialModelOverlay && (
         <InitialModelLoadOverlay
