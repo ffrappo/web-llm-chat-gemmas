@@ -84,7 +84,9 @@ type BenchReliabilityCaseSummary = {
   hardFailures: number;
   id: string;
   maxScore: number;
+  medianScore: number;
   minScore: number;
+  stdev: number;
 };
 
 type BenchReliabilityResult = {
@@ -194,28 +196,44 @@ function normalizeText(value: string) {
   return stripReasoningPrelude(value).toLowerCase().replace(/\s+/g, " ");
 }
 
-function stripCodeFences(value: string) {
-  return stripReasoningPrelude(value)
-    .replace(/^```[a-z]*\n?/i, "")
-    .replace(/\n?```$/i, "")
-    .trim();
+function hasCodeFences(value: string) {
+  return /```/.test(value);
 }
 
-function normalizeCode(value: string) {
-  return stripCodeFences(value)
-    .replace(/\s+/g, " ")
-    .replace(/\s*([{}();,+])/g, "$1")
-    .replace(/([{}();,+])\s*/g, "$1")
-    .trim();
+function countWhitespaceTokens(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function parseJsonObject(value: string) {
+function parseStrictJson(value: string) {
+  const trimmed = stripReasoningPrelude(value).trim();
+  if (hasCodeFences(trimmed)) return null;
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
   try {
-    const parsed = JSON.parse(stripCodeFences(value));
-    return parsed && typeof parsed === "object" ? parsed : null;
+    const parsed = JSON.parse(trimmed);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : null;
   } catch {
     return null;
   }
+}
+
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a === null || b === null) return false;
+  if (typeof a !== "object") return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((value, index) => deepEqual(value, b[index]));
+  }
+  const aObj = a as Record<string, unknown>;
+  const bObj = b as Record<string, unknown>;
+  const keysA = Object.keys(aObj);
+  const keysB = Object.keys(bObj);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => deepEqual(aObj[key], bObj[key]));
 }
 
 function isGenericFailure(output: string, error?: string) {
@@ -238,106 +256,121 @@ function isGenericFailure(output: string, error?: string) {
 
 const DEFAULT_SUITE: BenchCase[] = [
   {
-    id: "capital-one-word",
-    prompt: "Which city is the capital of France? Reply with exactly one word.",
-    weight: 3,
-    score(output, error) {
-      if (isGenericFailure(output, error)) return 0;
-      const normalized = normalizeText(output);
-      if (normalized === "paris") return 1;
-      if (normalized.includes("paris")) return 0.35;
-      return 0;
-    },
-  },
-  {
-    id: "capital-landmark-sentence",
+    id: "strict-json-nested",
     prompt:
-      "In one short sentence, name France's capital and one famous landmark there.",
+      'Reply with ONLY this minified JSON, nothing else. No code fences, no prose: {"name":"Alice","tags":["a","b","c"],"meta":{"active":true}}',
     weight: 4,
     score(output, error) {
       if (isGenericFailure(output, error)) return 0;
-      const normalized = normalizeText(output);
-      const hasParis = normalized.includes("paris");
-      const hasEiffel = normalized.includes("eiffel");
-      if (hasParis && hasEiffel) return 1;
-      if (hasParis || hasEiffel) return 0.25;
-      return 0;
-    },
-  },
-  {
-    id: "json-response",
-    prompt:
-      'Reply with minified JSON only: {"capital":"...","landmark":"..."} for France.',
-    weight: 4,
-    score(output, error) {
-      if (isGenericFailure(output, error)) return 0;
-      const parsed = parseJsonObject(output);
+      const parsed = parseStrictJson(output);
       if (!parsed) return 0;
-      const capital = normalizeText(String(parsed.capital ?? ""));
-      const landmark = normalizeText(String(parsed.landmark ?? ""));
-      if (capital === "paris" && landmark.includes("eiffel")) return 1;
-      if (capital === "paris" || landmark.includes("eiffel")) return 0.35;
-      return 0;
+      return deepEqual(parsed, {
+        name: "Alice",
+        tags: ["a", "b", "c"],
+        meta: { active: true },
+      })
+        ? 1
+        : 0;
     },
   },
   {
-    id: "reverse-string",
+    id: "exact-seven-words",
     prompt:
-      'Reply with exactly this reversed string and nothing else: "stressed".',
-    weight: 2,
-    score(output, error) {
-      if (isGenericFailure(output, error)) return 0;
-      return normalizeText(output) === "desserts" ? 1 : 0;
-    },
-  },
-  {
-    id: "count-letters",
-    prompt:
-      'Reply with exactly one number: how many letters are in the word "browser"?',
-    weight: 2,
-    score(output, error) {
-      if (isGenericFailure(output, error)) return 0;
-      return normalizeText(output) === "7" ? 1 : 0;
-    },
-  },
-  {
-    id: "code-only",
-    prompt:
-      "Return only JavaScript code that defines function add(a, b) { return a + b; }",
+      "Write a sentence about winter in exactly seven words. No more, no less. Reply with only the sentence.",
     weight: 3,
     score(output, error) {
       if (isGenericFailure(output, error)) return 0;
-      const normalized = normalizeCode(output);
-      if (normalized === "function add(a,b){return a+b;}") return 1;
-      if (
-        normalized.includes("function add(a,b)") &&
-        normalized.includes("return a+b;")
-      ) {
-        return 0.6;
-      }
-      return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      return countWhitespaceTokens(cleaned) === 7 ? 1 : 0;
     },
   },
   {
-    id: "service-worker",
+    id: "csv-with-header",
     prompt:
-      "In one complete sentence, explain what a service worker does in a browser.",
+      'Output a CSV with the header "name,age" and two data rows: "Alice,30" and "Bob,25". Only the CSV, nothing else. No code fences.',
+    weight: 4,
+    score(output, error) {
+      if (isGenericFailure(output, error)) return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      const lines = cleaned
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (lines.length !== 3) return 0;
+      return lines[0] === "name,age" &&
+        lines[1] === "Alice,30" &&
+        lines[2] === "Bob,25"
+        ? 1
+        : 0;
+    },
+  },
+  {
+    id: "code-no-fences",
+    prompt:
+      "Reply with ONLY this JavaScript, nothing else. No markdown, no code fences, no prose:\nfunction add(a,b){return a+b;}",
+    weight: 4,
+    score(output, error) {
+      if (isGenericFailure(output, error)) return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      const normalized = cleaned.replace(/\s+/g, "");
+      return normalized === "functionadd(a,b){returna+b;}" ? 1 : 0;
+    },
+  },
+  {
+    id: "arithmetic-multi-step",
+    prompt:
+      "Alice has 14 apples. She gives 4 to Bob and eats 2. Bob then gives half of his apples to Carol. How many apples does Carol have now? Reply with only the number.",
     weight: 3,
     score(output, error) {
       if (isGenericFailure(output, error)) return 0;
-      const normalized = normalizeText(output);
-      const mentionsServiceWorker =
-        normalized.includes("service worker") ||
-        normalized.includes("service-worker");
-      const mentionsBehavior =
-        normalized.includes("cache") ||
-        normalized.includes("network") ||
-        normalized.includes("background") ||
-        normalized.includes("offline") ||
-        normalized.includes("request");
-      if (mentionsServiceWorker && mentionsBehavior) return 1;
-      if (mentionsServiceWorker) return 0.35;
-      return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      return cleaned === "2" ? 1 : 0;
+    },
+  },
+  {
+    id: "reading-comprehension-year",
+    prompt:
+      'Text: "Marie moved to Lyon in 2018 and opened a bakery in 2020." Question: In what year did Marie open the bakery? Reply with only the year, four digits, nothing else.',
+    weight: 3,
+    score(output, error) {
+      if (isGenericFailure(output, error)) return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      return cleaned === "2020" ? 1 : 0;
+    },
+  },
+  {
+    id: "instruction-hierarchy-last-wins",
+    prompt:
+      "First, tell me the capital of Japan. Then, ignore that previous instruction and instead reply with only the word NO in uppercase. Reply with only NO.",
+    weight: 3,
+    score(output, error) {
+      if (isGenericFailure(output, error)) return 0;
+      const cleaned = stripReasoningPrelude(output).trim();
+      if (hasCodeFences(cleaned)) return 0;
+      return cleaned === "NO" ? 1 : 0;
+    },
+  },
+  {
+    id: "json-extract",
+    prompt:
+      'Text: "The event starts at 18:00 on 2026-05-14 in Paris." Extract into minified JSON as {"time":"...","date":"...","city":"..."}. Reply with only the JSON, no code fences, no prose.',
+    weight: 4,
+    score(output, error) {
+      if (isGenericFailure(output, error)) return 0;
+      const parsed = parseStrictJson(output);
+      if (!parsed) return 0;
+      return deepEqual(parsed, {
+        time: "18:00",
+        date: "2026-05-14",
+        city: "Paris",
+      })
+        ? 1
+        : 0;
     },
   },
 ];
@@ -435,6 +468,15 @@ function median(values: number[]) {
   return (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+function stdev(values: number[]) {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance =
+    values.reduce((sum, value) => sum + (value - mean) * (value - mean), 0) /
+    values.length;
+  return Math.sqrt(variance);
+}
+
 function getSuiteTests(caseIds?: string[], orderSeed?: number) {
   let tests = DEFAULT_SUITE;
   if (caseIds && caseIds.length > 0) {
@@ -518,17 +560,18 @@ function summarizeReliability(
     const cases = trials
       .map((trial) => trial.cases.find((entry) => entry.id === test.id))
       .filter(Boolean) as BenchCaseResult[];
+    const scores = cases.map((entry) => entry.score);
 
     return {
       id: test.id,
       averageScore:
-        cases.length > 0
-          ? cases.reduce((sum, entry) => sum + entry.score, 0) / cases.length
+        scores.length > 0
+          ? scores.reduce((sum, value) => sum + value, 0) / scores.length
           : 0,
-      minScore:
-        cases.length > 0 ? Math.min(...cases.map((entry) => entry.score)) : 0,
-      maxScore:
-        cases.length > 0 ? Math.max(...cases.map((entry) => entry.score)) : 0,
+      minScore: scores.length > 0 ? Math.min(...scores) : 0,
+      maxScore: scores.length > 0 ? Math.max(...scores) : 0,
+      medianScore: median(scores),
+      stdev: stdev(scores),
       hardFailures: cases.filter((entry) =>
         isGenericFailure(entry.output, entry.error),
       ).length,
@@ -847,6 +890,17 @@ export default function BenchPage() {
         <code>runReliability()</code> for repeated seeded trials, and{" "}
         <code>screenConfigs()</code> for ranking configs by failure rate before
         deeper benchmarking.
+      </p>
+      <p style={{ maxWidth: 780, lineHeight: 1.5 }}>
+        The default suite is 8 strict prompts, 28 points total: nested JSON,
+        exact-word-count sentence, CSV with header, fence-free code, a two-step
+        word problem, date extraction, an instruction-hierarchy test, and a
+        structured extraction task. Every scorer is binary (exact match or 0)
+        and rejects responses wrapped in code fences when the prompt forbids
+        them. The case summaries report min, median, max, stdev, and
+        hard-failure count per prompt so
+        <code> screenConfigs()</code> can surface tight, stable winners instead
+        of lucky runs.
       </p>
 
       <pre
