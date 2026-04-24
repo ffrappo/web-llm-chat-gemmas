@@ -10,6 +10,7 @@ A **Gemma 4 chat app that runs entirely in your browser** — no server, no API 
 - **Abortable streaming** via Transformers.js `InterruptableStoppingCriteria`, tunneled through a typed request/response protocol ([`app/client/browser-llm-protocol.ts`](app/client/browser-llm-protocol.ts)).
 - **A real benchmark lab**, not a toy. [`app/bench/page.tsx`](app/bench/page.tsx) exposes `window.__bench` with latin-hypercube sampling, reliability stages, multi-seed runs, and a scoring suite for format-exactness and concise-answer prompts.
 - **Benchmark results checked into the repo** — see [`docs/benchmarks/`](docs/benchmarks/). Honest numbers, including where the browser path breaks.
+- **Model variant tracks documented**, not hidden. See [`docs/uncensored-web-track.md`](docs/uncensored-web-track.md) for why the uncensored Gemma 4 browser path is currently parked and what will unblock it.
 
 ## Architecture
 
